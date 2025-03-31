@@ -1,0 +1,6 @@
+@IKM_Retro_HostAddress = http://localhost:5014
+
+GET {{IKM_Retro_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
