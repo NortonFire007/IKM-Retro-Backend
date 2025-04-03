@@ -1,0 +1,29 @@
+﻿version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "80:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=yourdb;Username=yourusername;Password=yourpassword;
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ikmdb
+      POSTGRES_USER: ikmusername
+      POSTGRES_PASSWORD: ikmpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
