@@ -16,10 +16,10 @@ namespace IKM_Retro.Controllers
         {
             if (ModelState.IsValid)
             {
-                var existingUser = await _userManager.FindByNameAsync(model.UserName);
+                var existingUser = await _userManager.FindByEmailAsync(model.Email);
                 if (existingUser != null)
                 {
-                    ModelState.AddModelError("", "User name is already taken");
+                    ModelState.AddModelError("", "Email is already taken");
                     return BadRequest(ModelState);
                 }
                 var user = new User()
@@ -31,7 +31,7 @@ namespace IKM_Retro.Controllers
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    var token = await _refreshTokenRepository.GenerateTokensAsync(model.UserName);
+                    var token = await _refreshTokenRepository.GenerateTokensAsync(user.Id);
                     return Ok(token);
                 }
                 
@@ -48,18 +48,39 @@ namespace IKM_Retro.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByNameAsync(model.UserName);
+                var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user != null)
                 {
                     if (await _userManager.CheckPasswordAsync(user, model.Password))
                     {
-                        var token = await _refreshTokenRepository.GenerateTokensAsync(model.UserName);
+                        var token = await _refreshTokenRepository.GenerateTokensAsync(user.Id);
                         return Ok(token);
                     }
                 }
-                ModelState.AddModelError("", "Invalid username or password");
+                ModelState.AddModelError("", "Invalid email or password");
             }
             return BadRequest(ModelState);
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
+        {
+            var storedToken = await _refreshTokenRepository.GetAsync(refreshToken);
+            if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
+            {
+                return Unauthorized(new { message = "Invalid or expired refresh token" });
+            }
+
+            var user = await _userManager.FindByIdAsync(storedToken.UserId);
+            if (user == null)
+            {
+                return Unauthorized(new { message = "User not found" });
+            }
+
+            var newToken = await _refreshTokenRepository.GenerateTokensAsync(user.Id);
+            _refreshTokenRepository.Remove(storedToken);
+
+            return Ok(newToken);
         }
 
     }

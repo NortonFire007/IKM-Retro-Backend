@@ -6,22 +6,27 @@ using IKM_Retro.Data;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.Models;
 using IKM_Retro.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace IKM_Retro.Repositories
 {
-    public class RefreshTokenRepository : IRefreshTokenRepository
+    public class RefreshTokenRepository(IConfiguration configuration, RetroDbContext ctx) : IRefreshTokenRepository
     {
-        private readonly IConfiguration _configuration;
-        private readonly RetroDbContext _ctx;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly RetroDbContext _ctx = ctx;
 
-        public RefreshTokenRepository(IConfiguration configuration, RetroDbContext ctx)
+        public async Task<RefreshToken?> GetAsync(string refreshToken)
         {
-            _configuration = configuration;
-            _ctx = ctx;
+            return await _ctx.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
         }
 
-        public async Task<JwtToken> GenerateTokensAsync(string userName)
+        public void Remove(RefreshToken refreshToken)
+        {
+            _ctx.RefreshTokens.Remove(refreshToken);
+        }
+
+        public async Task<JwtToken> GenerateTokensAsync(string userId)
         {
             var secret = _configuration["Jwt:Secret"];
             var issuer = _configuration["Jwt:Issuer"];
@@ -35,10 +40,11 @@ namespace IKM_Retro.Repositories
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var tokenHandler = new JwtSecurityTokenHandler();
 
+            var accessTokenExpiry = DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:AccessToken:ExpirationTimeMinutes"]));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, userName) }),
-                Expires = DateTime.UtcNow.AddMinutes(15),
+                Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)]),
+                Expires = accessTokenExpiry,
                 Issuer = issuer,
                 Audience = audience,
                 SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256Signature)
@@ -47,12 +53,17 @@ namespace IKM_Retro.Repositories
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(securityToken);
 
+            var existingRefreshTokens = _ctx.RefreshTokens.Where(t => t.UserId == userId);
+            _ctx.RefreshTokens.RemoveRange(existingRefreshTokens);
+
             var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var refreshTokenExpiry = DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:RefreshToken:ExpirationTimeDays"]));
+
             var refreshTokenEntry = new RefreshToken
             {
                 Token = refreshToken,
-                UserName = userName,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
+                UserId = userId,
+                ExpiryDate = refreshTokenExpiry
             };
 
             _ctx.RefreshTokens.Add(refreshTokenEntry);
@@ -62,5 +73,6 @@ namespace IKM_Retro.Repositories
             return new JwtToken(accessToken, refreshToken);
 
         }
+
     }
 }
