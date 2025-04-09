@@ -1,18 +1,19 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
+EXPOSE 8080
+#EXPOSE 443
 
-COPY *.csproj .
-RUN dotnet restore
-
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["IKM-Retro.csproj", "./"]
+RUN dotnet restore "./IKM-Retro.csproj"
 COPY . .
-RUN dotnet publish -c Release -o out
+RUN dotnet build "./IKM-Retro.csproj" -c Release -o /app/build
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM build AS publish
+RUN dotnet publish "./IKM-Retro.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
 WORKDIR /app
-COPY --from=build /app/out .
-
-EXPOSE 80
-
-ENV ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=ikmdb;Username=ikmusername;Password=ikmpassword;"
-
-ENTRYPOINT ["sh", "-c", "dotnet ef database update && dotnet IKM-Retro.dll"]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "IKM-Retro.dll"]
