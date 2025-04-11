@@ -4,6 +4,7 @@ using IKM_Retro.Extensions;
 using IKM_Retro.Models;
 using IKM_Retro.Repositories;
 using IKM_Retro.Repositories.Interfaces;
+using IKM_Retro.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,9 @@ services.AddAuthentication(options =>
 });
 
 services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+services.AddScoped<IAccountService, IAccountService>();
+
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 
 var app = builder.Build();
