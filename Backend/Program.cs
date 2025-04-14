@@ -9,8 +9,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using DotNetEnv;
+using IKM_Retro.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
 
 var services = builder.Services;
 
@@ -63,7 +67,8 @@ services.AddAuthentication(options =>
 
 services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-services.AddScoped<IAccountService, IAccountService>();
+// services.AddScoped<IAccountService, IAccountService>();
+services.AddScoped<IAccountService, AccountService>();
 
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 

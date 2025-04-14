@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IKM_Retro.Services
 {
-    public class AccountService(UserManager<User> userManager, IRefreshTokenRepository refreshTokenRepository) : IAccountService
+    public class AccountService(UserManager<User> userManager, IRefreshTokenRepository refreshTokenRepository)
+        : IAccountService
     {
-        public async Task<IActionResult> Register(AddUpdateUser model)
+        public async Task<IActionResult> Register(AddUser model)
         {
             if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
             {
@@ -66,15 +67,60 @@ namespace IKM_Retro.Services
             }
 
             var user = await userManager.FindByIdAsync(storedToken.UserId);
-            if (user == null)
-            {
-                return new UnauthorizedObjectResult(new { message = "User not found" });
-            }
+            if (user == null) return new UnauthorizedObjectResult(new { message = "User not found" });
 
             var newToken = await refreshTokenRepository.GenerateTokensAsync(user.Id);
             refreshTokenRepository.Remove(storedToken);
 
             return new OkObjectResult(newToken);
+        }
+
+        public async Task<User> UpdateProfileAsync(string userId, UpdateUser model)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found");
+
+            var existingUser = await userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null && existingUser.Id != userId)
+            {
+                throw new InvalidOperationException("This email is already in use");
+            }
+
+            user.UserName = model.UserName;
+            user.Email = model.Email;
+
+            var result = await userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                throw new Exception("Failed to update profile: " +
+                                    string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            return user;
+        }
+
+        public async Task<bool> ChangePasswordAsync(string userId, ChangePassword model)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found");
+            }
+
+            var passwordCheck = await userManager.CheckPasswordAsync(user, model.CurrentPassword);
+            if (!passwordCheck)
+            {
+                throw new InvalidOperationException("Current password is incorrect");
+            }
+
+            var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                throw new Exception("Failed to change password: " +
+                                    string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+
+            return true;
         }
     }
 }
