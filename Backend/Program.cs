@@ -11,19 +11,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DotNetEnv;
 using IKM_Retro.Services;
+using IKM_Retro.DTOs.Auth;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
 var services = builder.Services;
+var config = builder.Configuration;
 
 services.AddDbContext<RetroDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
+
+services.Configure<JwtOptions>(config.GetSection("JwtOptions"));
+
 
 services.AddCors(options =>
 {
@@ -45,9 +51,9 @@ services.AddAuthentication(options =>
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
-    var secret = builder.Configuration["Jwt:Secret"] ?? Environment.GetEnvironmentVariable("Jwt__Secret");
-    var issuer = builder.Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("Jwt__Issuer");
-    var audience = builder.Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("Jwt__Audience");
+    var secret = config["JwtOptions:SecretKey"] ?? Environment.GetEnvironmentVariable("Jwt__SecretKey");
+    var issuer = config["JwtOptions:Issuer"] ?? Environment.GetEnvironmentVariable("Jwt__Issuer");
+    var audience = config["JwtOptions:Audience"] ?? Environment.GetEnvironmentVariable("Jwt__Audience");
     if (secret is null || issuer is null || audience is null)
     {
         throw new ApplicationException("Jwt is not set in the configuration");
@@ -63,12 +69,21 @@ services.AddAuthentication(options =>
         ValidIssuer = issuer,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies[config["JwtOptions:CookieName"]];
+            return Task.CompletedTask;
+        }
+    };
 });
 
-services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-// services.AddScoped<IAccountService, IAccountService>();
-services.AddScoped<IAccountService, AccountService>();
+
+services.AddScoped<RefreshTokenRepository>();
+
+services.AddScoped<AccountService>();
 
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 

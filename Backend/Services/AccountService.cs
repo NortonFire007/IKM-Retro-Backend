@@ -1,62 +1,13 @@
 ﻿using IKM_Retro.DTOs.User;
 using IKM_Retro.Models;
-using IKM_Retro.Repositories.Interfaces;
-using IKM_Retro.Services.Interfaces;
+using IKM_Retro.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IKM_Retro.Services
 {
-    public class AccountService(UserManager<User> userManager, IRefreshTokenRepository refreshTokenRepository)
-        : IAccountService
+    public class AccountService(UserManager<User> userManager, RefreshTokenRepository refreshTokenRepository)
     {
-        public async Task<IActionResult> Register(AddUser model)
-        {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-            {
-                return new BadRequestObjectResult("Email and password are required.");
-            }
-
-            var existingUser = await userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null)
-            {
-                return new BadRequestObjectResult("Email is already taken.");
-            }
-
-            var user = new User
-            {
-                UserName = model.UserName,
-                Email = model.Email,
-                SecurityStamp = Guid.NewGuid().ToString()
-            };
-
-            var result = await userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-            {
-                var errors = result.Errors.Select(e => e.Description);
-                return new BadRequestObjectResult(errors);
-            }
-
-            var token = await refreshTokenRepository.GenerateTokensAsync(user.Id);
-            return new OkObjectResult(token);
-        }
-
-        public async Task<IActionResult> Login(LoginUser model)
-        {
-            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-            {
-                return new BadRequestObjectResult("Email and password are required.");
-            }
-
-            var user = await userManager.FindByEmailAsync(model.Email);
-            if (user == null || !await userManager.CheckPasswordAsync(user, model.Password))
-            {
-                return new BadRequestObjectResult("Invalid email or password.");
-            }
-
-            var token = await refreshTokenRepository.GenerateTokensAsync(user.Id);
-            return new OkObjectResult(token);
-        }
 
         public async Task<IActionResult> RefreshToken(string refreshToken)
         {
@@ -75,29 +26,43 @@ namespace IKM_Retro.Services
             return new OkObjectResult(newToken);
         }
 
-        public async Task<User> UpdateProfileAsync(string userId, UpdateUser model)
+        public async Task<BaseUserDTO> UpdateProfileAsync(string userId, PatchUserProfileBody model)
         {
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null) throw new KeyNotFoundException("User not found");
+            var user = await userManager.FindByIdAsync(userId)
+                       ?? throw new KeyNotFoundException("User not found");
 
-            var existingUser = await userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null && existingUser.Id != userId)
+            if (model.Email is not null && !string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("This email is already in use");
+                var existingUser = await userManager.FindByEmailAsync(model.Email);
+                if (existingUser != null && existingUser.Id != userId)
+                {
+                    throw new InvalidOperationException("This email is already in use");
+                }
+
+                user.Email = model.Email;
             }
 
-            user.UserName = model.UserName;
-            user.Email = model.Email;
+            if (model.UserName is not null && !string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
+            {
+                user.UserName = model.UserName;
+            }
 
             var result = await userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
-                throw new Exception("Failed to update profile: " +
-                                    string.Join(", ", result.Errors.Select(e => e.Description)));
+                var errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"Failed to update profile: {errorMessage}");
             }
 
-            return user;
+            return new BaseUserDTO
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email
+            };
+
         }
+
 
         public async Task<bool> ChangePasswordAsync(string userId, ChangePassword model)
         {

@@ -1,28 +1,78 @@
-﻿using IKM_Retro.DTOs.User;
-using IKM_Retro.Services.Interfaces;
+﻿using IKM_Retro.Controllers.Base;
+using IKM_Retro.DTOs.Auth;
+using IKM_Retro.DTOs.User;
+using IKM_Retro.Models;
+using IKM_Retro.Repositories;
+using IKM_Retro.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace IKM_Retro.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    public class AccountController(IAccountService accountService) : ControllerBase
+    public class AccountController(
+        AccountService accountService,
+        IOptions<JwtOptions> options,
+        UserManager<User> userManager,
+        RefreshTokenRepository refreshTokenRepository) : BaseAuthController(options)
     {
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] AddUser model)
         {
-            var result = await accountService.Register(model);
-            return result;
+            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            {
+                return BadRequest("Email and password are required.");
+            }
+
+            var existingUser = await userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null)
+            {
+                return BadRequest("Email is already taken.");
+            }
+
+            var user = new User
+            {
+                UserName = model.UserName,
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString()
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                return BadRequest(errors);
+            }
+
+            var token = await refreshTokenRepository.GenerateTokensAsync(user.Id);
+
+            AppendTokenToCookies(token.AccessToken);
+            return Ok(token);
         }
 
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginUser model)
         {
-            var result = await accountService.Login(model);
-            return result;
+            if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            {
+                return BadRequest("Email and password are required.");
+            }
+            
+            var user = await userManager.FindByEmailAsync(model.Email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, model.Password))
+            {
+                return BadRequest("Invalid email or password.");
+            }
+
+            var token = await refreshTokenRepository.GenerateTokensAsync(user.Id);
+
+            AppendTokenToCookies(token.AccessToken);
+            return Ok(token);
         }
 
         [HttpPost("refresh")]
@@ -33,19 +83,13 @@ namespace IKM_Retro.Controllers
             return result;
         }
 
-        [HttpPut("profile")]
+        [HttpPatch("profile")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUser model)
+        public async Task<IActionResult> UpdateProfile([FromBody] PatchUserProfileBody model)
         {
-            var userId = User.FindFirst("sub")?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { error = "User not authenticated" });
-            }
-
             try
             {
-                var updatedUser = await accountService.UpdateProfileAsync(userId, model);
+                var updatedUser = await accountService.UpdateProfileAsync(UserId, model);
                 return Ok(new { message = "Profile updated successfully", user = updatedUser });
             }
             catch (Exception ex)
@@ -58,15 +102,9 @@ namespace IKM_Retro.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePassword model)
         {
-            var userId = User.FindFirst("sub")?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { error = "User not authenticated" });
-            }
-
             try
             {
-                var success = await accountService.ChangePasswordAsync(userId, model);
+                var success = await accountService.ChangePasswordAsync(UserId, model);
                 if (success)
                 {
                     return Ok(new { message = "Password changed successfully" });
