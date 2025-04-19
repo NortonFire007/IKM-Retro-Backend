@@ -1,24 +1,49 @@
 using System.Text;
 using IKM_Retro.Data;
+using IKM_Retro.Extensions;
 using IKM_Retro.Models;
 using IKM_Retro.Repositories;
 using IKM_Retro.Repositories.Interfaces;
+using IKM_Retro.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using DotNetEnv;
+using IKM_Retro.Services;
+using IKM_Retro.DTOs.Auth;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var services = builder.Services;
+Env.Load();
 
-services.AddDbContext<RetroDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var services = builder.Services;
+var config = builder.Configuration;
+
+services.AddDbContext<RetroDbContext>(options =>
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
-services.AddIdentityCore<User>().AddEntityFrameworkStores<RetroDbContext>().AddDefaultTokenProviders();
+services.Configure<JwtOptions>(config.GetSection("JwtOptions"));
+
+
+services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
+services.AddIdentityCore<User>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<RetroDbContext>()
+    .AddDefaultTokenProviders();
+
 services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -26,13 +51,14 @@ services.AddAuthentication(options =>
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
-    var secret = builder.Configuration["Jwt:Secret"];
-    var issuer = builder.Configuration["Jwt:Issuer"];
-    var audience = builder.Configuration["Jwt:Audience"];
+    var secret = config["JwtOptions:SecretKey"] ?? Environment.GetEnvironmentVariable("Jwt__SecretKey");
+    var issuer = config["JwtOptions:Issuer"] ?? Environment.GetEnvironmentVariable("Jwt__Issuer");
+    var audience = config["JwtOptions:Audience"] ?? Environment.GetEnvironmentVariable("Jwt__Audience");
     if (secret is null || issuer is null || audience is null)
     {
         throw new ApplicationException("Jwt is not set in the configuration");
     }
+
     options.SaveToken = true;
     options.RequireHttpsMetadata = false;
     options.TokenValidationParameters = new TokenValidationParameters()
@@ -43,9 +69,23 @@ services.AddAuthentication(options =>
         ValidIssuer = issuer,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies[config["JwtOptions:CookieName"]];
+            return Task.CompletedTask;
+        }
+    };
 });
 
-services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+
+services.AddScoped<RefreshTokenRepository>();
+
+services.AddScoped<AccountService>();
+
+// services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 
 var app = builder.Build();
 
@@ -53,7 +93,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.ApplyMigrations();
 }
+
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 

@@ -11,5 +11,7 @@ namespace IKM_Retro.Data
         {
             base.OnModelCreating(modelBuilder);
         }
+        
+        // public DbSet<BoardRole> BoardRoles { get; set; }
     }
 }

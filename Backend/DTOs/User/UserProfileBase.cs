@@ -2,14 +2,14 @@
 
 namespace IKM_Retro.DTOs.User
 {
-    public class AddUpdateUser
+    public class UserProfileBase
     {
         [Required(ErrorMessage = "User name is required")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "User name must be between 3 and 50 characters")]
         public string UserName { get; set; } = string.Empty;
+
         [EmailAddress]
         [Required(ErrorMessage = "Email is required")]
         public string Email { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Password is required")]
-        public string Password { get; set; } = string.Empty;
     }
 }
