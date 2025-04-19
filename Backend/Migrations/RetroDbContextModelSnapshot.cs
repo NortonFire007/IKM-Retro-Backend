@@ -49,6 +49,235 @@ namespace IKM_Retro.Migrations
                     b.ToTable("AspNetUserRefreshTokens");
                 });
 
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Comment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GroupItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Likes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupItemId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.CommentVote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CommentVotes");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Group", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("OrderPosition")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RetrospectiveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetrospectiveId");
+
+                    b.ToTable("RetrospectiveGroups");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.GroupItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("OrderPosition")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RetrospectiveGroupItems");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Retrospective", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InviteLink")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Template")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Retrospectives");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveToUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RetrospectiveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetrospectiveId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RetrospectiveToUsers");
+                });
+
             modelBuilder.Entity("IKM_Retro.Models.User", b =>
                 {
                     b.Property<string>("Id")
@@ -245,6 +474,85 @@ namespace IKM_Retro.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Comment", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.GroupItem", "GroupItem")
+                        .WithMany("Comments")
+                        .HasForeignKey("GroupItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IKM_Retro.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("GroupItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.CommentVote", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Comment", "Comment")
+                        .WithMany("CommentVotes")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IKM_Retro.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Group", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Retrospective", "Retrospective")
+                        .WithMany("Groups")
+                        .HasForeignKey("RetrospectiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Retrospective");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.GroupItem", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Group", "Group")
+                        .WithMany("GroupItems")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IKM_Retro.Models.User", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveToUser", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Retrospective", "Retrospective")
+                        .WithMany("RetrospectiveUsers")
+                        .HasForeignKey("RetrospectiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IKM_Retro.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Retrospective");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -294,6 +602,28 @@ namespace IKM_Retro.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Comment", b =>
+                {
+                    b.Navigation("CommentVotes");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Group", b =>
+                {
+                    b.Navigation("GroupItems");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.GroupItem", b =>
+                {
+                    b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.Retrospective", b =>
+                {
+                    b.Navigation("Groups");
+
+                    b.Navigation("RetrospectiveUsers");
                 });
 #pragma warning restore 612, 618
         }
