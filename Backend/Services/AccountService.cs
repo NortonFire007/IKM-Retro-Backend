@@ -9,6 +9,10 @@ namespace IKM_Retro.Services
 {
     public class AccountService(UserManager<User> userManager, RefreshTokenRepository refreshTokenRepository)
     {
+        public async Task<User?> GetById(string id)
+        {
+            return await userManager.FindByIdAsync(id);
+        }
         public async Task<JwtToken> Register(string username, string email, string password)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
@@ -60,7 +64,7 @@ namespace IKM_Retro.Services
 
         public async Task<JwtToken> RefreshToken(string refreshToken)
         {
-            var storedToken = await refreshTokenRepository.GetAsync(refreshToken);
+            var storedToken = await refreshTokenRepository.GetByValue(refreshToken);
             if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
             {
                 throw new BusinessException("Invalid or expired refresh token");

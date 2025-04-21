@@ -3,8 +3,6 @@ using IKM_Retro.Data;
 using IKM_Retro.Extensions;
 using IKM_Retro.Models;
 using IKM_Retro.Repositories;
-using IKM_Retro.Repositories.Interfaces;
-using IKM_Retro.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using DotNetEnv;
 using IKM_Retro.Services;
 using IKM_Retro.DTOs.Auth;
-using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +79,11 @@ services.AddAuthentication(options =>
 
 
 services.AddScoped<RefreshTokenRepository>();
+services.AddScoped<RetrospectiveRepository>();
+services.AddScoped<RetrospectiveGroupRepository>();
+services.AddScoped<RetrospectiveGroupItemRepository>();
 
+services.AddScoped<RetrospectiveService>();
 services.AddScoped<AccountService>();
 
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();

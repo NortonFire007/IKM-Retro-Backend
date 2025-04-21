@@ -8,20 +8,6 @@ namespace IKM_Retro.Controllers.Base
     {
         protected readonly JwtOptions _options = options.Value;
         public string UserId => User.FindFirst("userId")?.Value;
-        protected void AppendTokenToCookies(string accessToken)
-        {
-            Response.Cookies.Append(
-                _options.CookieName,
-                accessToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTime.UtcNow.AddMinutes(_options.AccessToken.ExpirationTimeMinutes)
-                }
-            );
-        }
-
+        
     }
 }

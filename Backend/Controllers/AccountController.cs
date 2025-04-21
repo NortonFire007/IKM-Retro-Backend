@@ -12,6 +12,13 @@ namespace IKM_Retro.Controllers
     [Route("api/v1/[controller]")]
     public class AccountController(AccountService accountService, IOptions<JwtOptions> options) : BaseAuthController(options)
     {
+        [HttpGet("self")]
+        [Authorize]
+        public async Task<IActionResult> GetMySelf()
+        {
+            return Ok(await accountService.GetById(UserId));
+        }
+
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] PostUserBody model)
@@ -53,6 +60,21 @@ namespace IKM_Retro.Controllers
         {
             await accountService.ChangePasswordAsync(UserId, model);
             return Ok(new { message = "Password changed successfully" });
+        }
+
+        protected void AppendTokenToCookies(string accessToken)
+        {
+            Response.Cookies.Append(
+                _options.CookieName,
+                accessToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddMinutes(_options.AccessToken.ExpirationTimeMinutes)
+                }
+            );
         }
     }
 }

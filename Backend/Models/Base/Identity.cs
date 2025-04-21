@@ -1,6 +1,9 @@
-﻿namespace IKM_Retro.Models.Base;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class Identity<T>
+namespace IKM_Retro.Models.Base;
+
+public abstract class Identity<T>
 {
-    public required T Id { get; set; }
+    [Key]
+    public T ?Id { get; set; }
 }

@@ -5,18 +5,19 @@ using System.Text;
 using IKM_Retro.Data;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.Models;
+using IKM_Retro.Repositories.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace IKM_Retro.Repositories
 {
-    public class RefreshTokenRepository(IOptions<JwtOptions> jwtOptions, RetroDbContext ctx)
+    public class RefreshTokenRepository(IOptions<JwtOptions> jwtOptions, RetroDbContext ctx) : BaseRepository(ctx)
     {
         private readonly JwtOptions _jwtOptions = jwtOptions.Value;
         private readonly RetroDbContext _ctx = ctx;
 
-        public async Task<RefreshToken?> GetAsync(string refreshToken)
+        public async Task<RefreshToken?> GetByValue(string refreshToken)
         {
             return await _ctx.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
         }
@@ -57,7 +58,7 @@ namespace IKM_Retro.Repositories
 
             _ctx.RefreshTokens.Add(refreshTokenEntry);
 
-            await _ctx.SaveChangesAsync();
+            await SaveChangesAsync();
 
             return new JwtToken(accessToken, refreshToken);
 
