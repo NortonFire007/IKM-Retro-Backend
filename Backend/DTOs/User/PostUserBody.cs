@@ -2,9 +2,9 @@
 
 namespace IKM_Retro.DTOs.User
 {
-    public class AddUser : UserProfileBase
+    public class PostUserBody : UserProfileBase
     {
-        [Required(ErrorMessage = "Password is required")]
+        [Required(AllowEmptyStrings = false, ErrorMessage = "Password is required")]
         public string Password { get; set; } = string.Empty;
     }
 }

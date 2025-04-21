@@ -6,7 +6,7 @@ namespace IKM_Retro.Services.Interfaces
 {
     public interface IAccountService
     {
-        Task<IActionResult> Register(AddUser model);
+        Task<IActionResult> Register(PostUserBody model);
         Task<IActionResult> Login(LoginUser model);
         Task<IActionResult> RefreshToken(string refreshToken);
         Task<User> UpdateProfileAsync(string userId, UpdateUser model);

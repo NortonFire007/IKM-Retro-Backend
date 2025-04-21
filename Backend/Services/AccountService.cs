@@ -1,42 +1,88 @@
-﻿using IKM_Retro.DTOs.User;
+﻿using AnimeWebApp.Exceptions.Base;
+using IKM_Retro.DTOs.Auth;
+using IKM_Retro.DTOs.User;
 using IKM_Retro.Models;
 using IKM_Retro.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace IKM_Retro.Services
 {
     public class AccountService(UserManager<User> userManager, RefreshTokenRepository refreshTokenRepository)
     {
+        public async Task<JwtToken> Register(string username, string email, string password)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                throw new BusinessException("Email and password are required.");
+            }
 
-        public async Task<IActionResult> RefreshToken(string refreshToken)
+            var existingUser = await userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                throw new EntityExistsException("User with that email already exists.");
+            }
+
+            var user = new User
+            {
+                UserName = username,
+                Email = email,
+                SecurityStamp = Guid.NewGuid().ToString()
+            };
+
+            var result = await userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                throw new BusinessException("An error occured, try again later");
+
+            }
+
+            return await refreshTokenRepository.GenerateTokensAsync(user.Id);
+
+        }
+
+        public async Task<JwtToken> Login(string email, string password)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                throw new BusinessException("Email and password are required.");
+            }
+
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, password))
+            {
+                throw new BusinessException("Invalid email or password.");
+            }
+
+            return await refreshTokenRepository.GenerateTokensAsync(user.Id);
+        }
+
+
+
+        public async Task<JwtToken> RefreshToken(string refreshToken)
         {
             var storedToken = await refreshTokenRepository.GetAsync(refreshToken);
             if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
             {
-                return new UnauthorizedObjectResult(new { message = "Invalid or expired refresh token" });
+                throw new BusinessException("Invalid or expired refresh token");
             }
 
-            var user = await userManager.FindByIdAsync(storedToken.UserId);
-            if (user == null) return new UnauthorizedObjectResult(new { message = "User not found" });
-
+            var user = await userManager.FindByIdAsync(storedToken.UserId) ?? throw new NotFoundException("User not Found");
             var newToken = await refreshTokenRepository.GenerateTokensAsync(user.Id);
             refreshTokenRepository.Remove(storedToken);
 
-            return new OkObjectResult(newToken);
+            return newToken;
         }
 
         public async Task<BaseUserDTO> UpdateProfileAsync(string userId, PatchUserProfileBody model)
         {
-            var user = await userManager.FindByIdAsync(userId)
-                       ?? throw new KeyNotFoundException("User not found");
+            var user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found");
 
             if (model.Email is not null && !string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase))
             {
                 var existingUser = await userManager.FindByEmailAsync(model.Email);
                 if (existingUser != null && existingUser.Id != userId)
                 {
-                    throw new InvalidOperationException("This email is already in use");
+                    throw new BusinessException("This email is already in use");
                 }
 
                 user.Email = model.Email;
@@ -50,8 +96,7 @@ namespace IKM_Retro.Services
             var result = await userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
-                var errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"Failed to update profile: {errorMessage}");
+                throw new BusinessException($"Failed to update profile, try again later");
             }
 
             return new BaseUserDTO
@@ -64,28 +109,22 @@ namespace IKM_Retro.Services
         }
 
 
-        public async Task<bool> ChangePasswordAsync(string userId, ChangePassword model)
+        public async Task ChangePasswordAsync(string userId, ChangePassword model)
         {
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("User not found");
-            }
-
+            var user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found");
             var passwordCheck = await userManager.CheckPasswordAsync(user, model.CurrentPassword);
             if (!passwordCheck)
             {
-                throw new InvalidOperationException("Current password is incorrect");
+                throw new BusinessException("Current password is incorrect");
             }
 
             var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
             if (!result.Succeeded)
             {
-                throw new Exception("Failed to change password: " +
-                                    string.Join(", ", result.Errors.Select(e => e.Description)));
+                throw new BusinessException("Failed to change password");
             }
 
-            return true;
+            return;
         }
     }
 }

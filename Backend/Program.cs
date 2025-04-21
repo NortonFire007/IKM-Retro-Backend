@@ -87,6 +87,17 @@ services.AddScoped<AccountService>();
 
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
+    };
+});
+
+builder.Services.AddExceptionHandler<ExceptionHandler>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -95,6 +106,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.ApplyMigrations();
 }
+
+app.UseExceptionHandler();
 
 app.UseCors("AllowAll");
 
