@@ -20,12 +20,13 @@ public class Retrospective : Auditable<Guid>
     [Required]
     public required TemplateTypeEnum Template { get; set; }
 
+    public string? InviteLink { get; set; }
+
     [Required]
-    public string? InviteLink { get; set; } 
-
-    public int OwnerId { get; set; } 
+    [ForeignKey("User"), MaxLength(128)]
+    public required string UserId { get; set; } 
     
-    public ICollection<RetrospectiveToUser> RetrospectiveUsers { get; set; } = new List<RetrospectiveToUser>();
+    public ICollection<RetrospectiveToUser> RetrospectiveUsers { get; set; } = [];
 
-    public ICollection<Group> Groups { get; set; } = new List<Group>();
+    public ICollection<Group> Groups { get; set; } = [];
 }

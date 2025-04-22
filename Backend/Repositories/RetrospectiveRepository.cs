@@ -31,5 +31,10 @@ namespace IKM_Retro.Repositories
         {
             await _ctx.Retrospectives.AddAsync(retrospective);
         }
+
+        public async Task AddRelation(RetrospectiveToUser retrospectiveToUser)
+        {
+            await _ctx.RetrospectiveToUser.AddAsync(retrospectiveToUser);
+        }
     }
 }

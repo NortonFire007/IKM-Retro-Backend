@@ -15,7 +15,7 @@ public class RetrospectiveToUser : Auditable<int>
 
     [ForeignKey("User"), MaxLength(128)]
     public string? UserId { get; set; } 
-    
+
     public RoleTypeEnum Role { get; set; }
     
     public required User User { get; set; }

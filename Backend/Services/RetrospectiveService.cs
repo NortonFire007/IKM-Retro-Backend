@@ -16,7 +16,7 @@ namespace IKM_Retro.Services
     {
         public async Task<List<Retrospective>> GetByUserId(string userId)
         {
-            _ = userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+            _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
 
             return await retrospectiveRepository.GetByUserId(userId);
         }
@@ -36,7 +36,8 @@ namespace IKM_Retro.Services
             {
                 Id = Guid.NewGuid(),
                 Title = body.Title,
-                Template = body.TemplateType
+                Template = body.TemplateType,
+                UserId = userId
             };
 
             await retrospectiveRepository.Add(retrospective);
@@ -49,9 +50,12 @@ namespace IKM_Retro.Services
                 {
                     Name = group.Name,
                     Description = group.Description,
+                    OrderPosition = group.SortOrder,
                     Retrospective = retrospective
                 });
             }
+
+            await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
 
             await retrospectiveRepository.SaveChangesAsync();
         }
