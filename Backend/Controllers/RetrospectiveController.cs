@@ -15,7 +15,7 @@ namespace IKM_Retro.Controllers
     public class RetrospectiveController(RetrospectiveService retrospectiveService, IOptions<JwtOptions> options) : BaseAuthController(options)
     {
         [HttpGet]
-        public async Task<List<Retrospective>> GetByUserId()
+        public async Task<List<RetrospectiveToUserDto>> GetByUserId()
         {
             return await retrospectiveService.GetByUserId(UserId);
         }
@@ -25,6 +25,14 @@ namespace IKM_Retro.Controllers
         public async Task<IActionResult> Post([FromBody] PostRetrospectiveBody body)
         {
             await retrospectiveService.Create(UserId, body);
+            return Ok();
+        }
+        
+        [HttpPost("join/{code}")]
+        public async Task<IActionResult> JoinByInvite(string code)
+        {
+            string userId = User.FindFirst("id")?.Value ?? throw new UnauthorizedAccessException();
+            await retrospectiveService.JoinByInvite(userId, code);
             return Ok();
         }
     }

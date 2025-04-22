@@ -1,6 +1,8 @@
 ﻿using IKM_Retro.Data;
+using IKM_Retro.DTOs.Retrospective;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace IKM_Retro.Repositories
@@ -14,12 +16,16 @@ namespace IKM_Retro.Repositories
             return await _ctx.Retrospectives.FindAsync(id);
         }
 
-        public async Task<List<Retrospective>> GetByUserId(string userId)
+        public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
         {
             return await _ctx.RetrospectiveToUser
-                    .Where(rtu => rtu.UserId == userId)
-                    .Select(rtu => rtu.Retrospective)
-                    .ToListAsync();
+                .Where(rtu => rtu.UserId == userId)
+                .ProjectToType<RetrospectiveToUserDto>()
+                .ToListAsync();
+            // return await _ctx.RetrospectiveToUser
+            //         .Where(rtu => rtu.UserId == userId)
+            //         .Select(rtu => rtu.Retrospective)
+            //         .ToListAsync();
         }
         
         public async Task<int> CountUserRetrospectives(string userId)
@@ -35,6 +41,11 @@ namespace IKM_Retro.Repositories
         public async Task AddRelation(RetrospectiveToUser retrospectiveToUser)
         {
             await _ctx.RetrospectiveToUser.AddAsync(retrospectiveToUser);
+        }
+        
+        public async Task<bool> CheckIfUserJoined(Guid retrospectiveId, string userId)
+        {
+            return await _ctx.RetrospectiveToUser.AnyAsync(rtu => rtu.RetrospectiveId == retrospectiveId && rtu.UserId == userId);
         }
     }
 }

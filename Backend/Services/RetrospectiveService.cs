@@ -1,5 +1,6 @@
 ﻿using AnimeWebApp.Exceptions.Base;
 using IKM_Retro.DTOs.Retrospective;
+using IKM_Retro.Enums;
 using IKM_Retro.Models;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories;
@@ -12,9 +13,10 @@ namespace IKM_Retro.Services
         UserManager<User> userManager,
         RetrospectiveRepository retrospectiveRepository,
         RetrospectiveGroupRepository retrospectiveGroupRepository,
+        InviteRepository inviteRepository,
         RetrospectiveGroupItemRepository retrospectiveGroupItemRepository)
     {
-        public async Task<List<Retrospective>> GetByUserId(string userId)
+        public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
         {
             _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
 
@@ -37,7 +39,7 @@ namespace IKM_Retro.Services
                 Id = Guid.NewGuid(),
                 Title = body.Title,
                 Template = body.TemplateType,
-                UserId = userId
+                CreatorUserId = userId
             };
 
             await retrospectiveRepository.Add(retrospective);
@@ -55,12 +57,40 @@ namespace IKM_Retro.Services
                 });
             }
 
-            await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
+            // await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
+            await retrospectiveRepository.AddRelation(new RetrospectiveToUser
+            {
+                Retrospective = retrospective, 
+                User = user,                    
+                Role = RoleTypeEnum.Owner    
+            });
 
             await retrospectiveRepository.SaveChangesAsync();
         }
+        
+        public async Task JoinByInvite(string userId, string code)
+        {
+            User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
 
+            var invite = await inviteRepository.GetActiveInviteByCode(code)
+                         ?? throw new NotFoundException("Invite link invalid or expired.");
 
+            bool alreadyJoined = await retrospectiveRepository.CheckIfUserJoined(invite.RetrospectiveId, userId);
 
+            if (!alreadyJoined)
+            {
+                await retrospectiveRepository.AddRelation(new RetrospectiveToUser
+                {
+                    RetrospectiveId = invite.RetrospectiveId,
+                    Retrospective = invite.Retrospective!, // fix
+                    UserId = user.Id,
+                    User = user,
+                    Role = RoleTypeEnum.Participant
+                });
+
+                await retrospectiveRepository.SaveChangesAsync();
+            }
+        }
     }
+    
 }

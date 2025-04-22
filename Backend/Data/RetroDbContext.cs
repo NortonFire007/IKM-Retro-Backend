@@ -14,11 +14,11 @@ namespace IKM_Retro.Data
         public DbSet<GroupItem> GroupItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<CommentVote> CommentVotes { get; set; }
+        public DbSet<RetrospectiveInvite> RetrospectiveInvites { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
         }
         
-        // public DbSet<BoardRole> BoardRoles { get; set; }
     }
 }

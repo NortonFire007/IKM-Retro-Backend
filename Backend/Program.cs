@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DotNetEnv;
+using Mapster;
 using IKM_Retro.Services;
 using IKM_Retro.DTOs.Auth;
+using IKM_Retro.DTOs.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +37,9 @@ services.AddCors(options =>
         builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
+
+services.AddMapster();
+MapsterConfig.RegisterMappings();
 
 services.AddIdentityCore<User>()
     .AddRoles<IdentityRole>()
@@ -82,9 +87,11 @@ services.AddScoped<RefreshTokenRepository>();
 services.AddScoped<RetrospectiveRepository>();
 services.AddScoped<RetrospectiveGroupRepository>();
 services.AddScoped<RetrospectiveGroupItemRepository>();
+services.AddScoped<InviteRepository>();
 
 services.AddScoped<RetrospectiveService>();
 services.AddScoped<AccountService>();
+services.AddScoped<InviteService>();
 
 // services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
 

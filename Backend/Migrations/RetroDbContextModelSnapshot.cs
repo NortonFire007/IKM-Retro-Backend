@@ -213,11 +213,13 @@ namespace IKM_Retro.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatorUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("InviteLink")
-                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -236,14 +238,43 @@ namespace IKM_Retro.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Retrospectives");
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveInvite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RetrospectiveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetrospectiveId")
+                        .IsUnique();
+
+                    b.ToTable("RetrospectiveInvites");
                 });
 
             modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveToUser", b =>
@@ -537,6 +568,17 @@ namespace IKM_Retro.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveInvite", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Retrospective", "Retrospective")
+                        .WithOne("InviteLink")
+                        .HasForeignKey("IKM_Retro.Models.Retro.RetrospectiveInvite", "RetrospectiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Retrospective");
+                });
+
             modelBuilder.Entity("IKM_Retro.Models.Retro.RetrospectiveToUser", b =>
                 {
                     b.HasOne("IKM_Retro.Models.Retro.Retrospective", "Retrospective")
@@ -623,6 +665,8 @@ namespace IKM_Retro.Migrations
             modelBuilder.Entity("IKM_Retro.Models.Retro.Retrospective", b =>
                 {
                     b.Navigation("Groups");
+
+                    b.Navigation("InviteLink");
 
                     b.Navigation("RetrospectiveUsers");
                 });
