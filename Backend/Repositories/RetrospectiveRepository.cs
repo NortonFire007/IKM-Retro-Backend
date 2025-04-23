@@ -47,5 +47,14 @@ namespace IKM_Retro.Repositories
         {
             return await _ctx.RetrospectiveToUser.AnyAsync(rtu => rtu.RetrospectiveId == retrospectiveId && rtu.UserId == userId);
         }
+        
+        public async Task Delete(Guid id)
+        {
+            var retrospective = await _ctx.Retrospectives.FindAsync(id);
+            if (retrospective != null)
+            {
+                _ctx.Retrospectives.Remove(retrospective);
+            }
+        }
     }
 }

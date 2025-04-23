@@ -35,5 +35,13 @@ namespace IKM_Retro.Controllers
             await retrospectiveService.JoinByInvite(userId, code);
             return Ok();
         }
+        
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await retrospectiveService.Delete(UserId, id);
+            return Ok();
+        }
+
     }
 }

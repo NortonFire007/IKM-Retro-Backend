@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace IKM_Retro.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/[controller]")]
     public class AccountController(AccountService accountService, IOptions<JwtOptions> options) : BaseAuthController(options)
     {
         [HttpGet("self")]

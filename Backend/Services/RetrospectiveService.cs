@@ -60,14 +60,14 @@ namespace IKM_Retro.Services
             // await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
             await retrospectiveRepository.AddRelation(new RetrospectiveToUser
             {
-                Retrospective = retrospective, 
-                User = user,                    
-                Role = RoleTypeEnum.Owner    
+                Retrospective = retrospective,
+                User = user,
+                Role = RoleTypeEnum.Owner
             });
 
             await retrospectiveRepository.SaveChangesAsync();
         }
-        
+
         public async Task JoinByInvite(string userId, string code)
         {
             User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
@@ -91,6 +91,19 @@ namespace IKM_Retro.Services
                 await retrospectiveRepository.SaveChangesAsync();
             }
         }
+
+        public async Task Delete(string userId, Guid retrospectiveId)
+        {
+            var retrospective = await retrospectiveRepository.GetById(retrospectiveId)
+                                ?? throw new NotFoundException("Retrospective not found.");
+
+            if (retrospective.CreatorUserId != userId)
+            {
+                throw new BusinessException("Only the creator can delete this retrospective.");
+            }
+
+            await retrospectiveRepository.Delete(retrospectiveId);
+            await retrospectiveRepository.SaveChangesAsync();
+        }
     }
-    
 }
