@@ -5,56 +5,55 @@ using IKM_Retro.Repositories.Base;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
-namespace IKM_Retro.Repositories
+namespace IKM_Retro.Repositories;
+
+public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
 {
-    public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
+    private readonly RetroDbContext _ctx = ctx;
+
+    public async Task<Retrospective?> GetById(Guid id)
     {
-        private readonly RetroDbContext _ctx = ctx;
+        return await _ctx.Retrospectives.FindAsync(id);
+    }
 
-        public async Task<Retrospective?> GetById(Guid id)
-        {
-            return await _ctx.Retrospectives.FindAsync(id);
-        }
-
-        public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
-        {
-            return await _ctx.RetrospectiveToUser
-                .Where(rtu => rtu.UserId == userId)
-                .ProjectToType<RetrospectiveToUserDto>()
-                .ToListAsync();
-            // return await _ctx.RetrospectiveToUser
-            //         .Where(rtu => rtu.UserId == userId)
-            //         .Select(rtu => rtu.Retrospective)
-            //         .ToListAsync();
-        }
+    public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
+    {
+        return await _ctx.RetrospectiveToUser
+            .Where(rtu => rtu.UserId == userId)
+            .ProjectToType<RetrospectiveToUserDto>()
+            .ToListAsync();
+        // return await _ctx.RetrospectiveToUser
+        //         .Where(rtu => rtu.UserId == userId)
+        //         .Select(rtu => rtu.Retrospective)
+        //         .ToListAsync();
+    }
         
-        public async Task<int> CountUserRetrospectives(string userId)
-        {
-            return await _ctx.RetrospectiveToUser.Where(rtu => rtu.UserId == userId).CountAsync();
-        }
+    public async Task<int> CountUserRetrospectives(string userId)
+    {
+        return await _ctx.RetrospectiveToUser.Where(rtu => rtu.UserId == userId).CountAsync();
+    }
 
-        public async Task Add(Retrospective retrospective)
-        {
-            await _ctx.Retrospectives.AddAsync(retrospective);
-        }
+    public async Task Add(Retrospective retrospective)
+    {
+        await _ctx.Retrospectives.AddAsync(retrospective);
+    }
 
-        public async Task AddRelation(RetrospectiveToUser retrospectiveToUser)
-        {
-            await _ctx.RetrospectiveToUser.AddAsync(retrospectiveToUser);
-        }
+    public async Task AddRelation(RetrospectiveToUser retrospectiveToUser)
+    {
+        await _ctx.RetrospectiveToUser.AddAsync(retrospectiveToUser);
+    }
         
-        public async Task<bool> CheckIfUserJoined(Guid retrospectiveId, string userId)
-        {
-            return await _ctx.RetrospectiveToUser.AnyAsync(rtu => rtu.RetrospectiveId == retrospectiveId && rtu.UserId == userId);
-        }
+    public async Task<bool> CheckIfUserJoined(Guid retrospectiveId, string userId)
+    {
+        return await _ctx.RetrospectiveToUser.AnyAsync(rtu => rtu.RetrospectiveId == retrospectiveId && rtu.UserId == userId);
+    }
         
-        public async Task Delete(Guid id)
+    public async Task Delete(Guid id)
+    {
+        Retrospective? retrospective = await _ctx.Retrospectives.FindAsync(id);
+        if (retrospective != null)
         {
-            var retrospective = await _ctx.Retrospectives.FindAsync(id);
-            if (retrospective != null)
-            {
-                _ctx.Retrospectives.Remove(retrospective);
-            }
+            _ctx.Retrospectives.Remove(retrospective);
         }
     }
 }

@@ -32,17 +32,17 @@ public class ExceptionHandler(IProblemDetailsService problemDetailsService) : IE
 
             default:
                 statusCode = StatusCodes.Status500InternalServerError;
-                problemDetails = new()
+                problemDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Title = "Sorry, unexpected exception happened.",
-                    Detail = "Please, try again later.",
+                    Detail = "Please, try again later."
                 };
 
                 break;
         }
 
-        problemDetails ??= new()
+        problemDetails ??= new ProblemDetails
         {
             Status = statusCode,
             Title = exception.Message,
@@ -50,7 +50,7 @@ public class ExceptionHandler(IProblemDetailsService problemDetailsService) : IE
 
         httpContext.Response.StatusCode = statusCode.Value;
 
-        return problemDetailsService.TryWriteAsync(new()
+        return problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             Exception = exception,
             HttpContext = httpContext,

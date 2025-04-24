@@ -1,7 +1,6 @@
-﻿namespace IKM_Retro.DTOs.Base
+﻿namespace IKM_Retro.DTOs.Base;
+
+public class IdentityDTO<T>
 {
-    public class IdentityDTO<T>
-    {
-        public required T Id { get; set; }
-    }
+    public required T Id { get; set; }
 }

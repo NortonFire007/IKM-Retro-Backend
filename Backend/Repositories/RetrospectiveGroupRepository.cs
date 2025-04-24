@@ -3,28 +3,27 @@ using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace IKM_Retro.Repositories
+namespace IKM_Retro.Repositories;
+
+public class RetrospectiveGroupRepository(RetroDbContext ctx) : BaseRepository(ctx)
 {
-    public class RetrospectiveGroupRepository(RetroDbContext ctx) : BaseRepository(ctx)
+    private readonly RetroDbContext _ctx = ctx;
+
+    public async Task<Group?> GetById(int id)
     {
-        private readonly RetroDbContext _ctx = ctx;
+        return await _ctx.Groups.FindAsync(id);
+    }
 
-        public async Task<Group?> GetById(int id)
-        {
-            return await _ctx.Groups.FindAsync(id);
-        }
+    public async Task<List<BaseGroupDTO>> GetByRetrospectiveId(Guid retrospectiveId)
+    {
+        return await _ctx.Groups
+            .Where(g => g.RetrospectiveId == retrospectiveId)
+            .Select(BaseGroupDTO.Selector)
+            .ToListAsync();
+    }
 
-        public async Task<List<BaseGroupDTO>> GetByRetrospectiveId(Guid retrospectiveId)
-        {
-            return await _ctx.Groups
-                .Where(g => g.RetrospectiveId == retrospectiveId)
-                .Select(BaseGroupDTO.Selector)
-                .ToListAsync();
-        }
-
-        public async Task Add(Group group)
-        {
-            await _ctx.Groups.AddAsync(group);
-        }
+    public async Task Add(Group group)
+    {
+        await _ctx.Groups.AddAsync(group);
     }
 }
