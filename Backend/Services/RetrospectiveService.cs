@@ -7,103 +7,102 @@ using IKM_Retro.Repositories;
 using IKM_Retro.Helpers.Factories;
 using Microsoft.AspNetCore.Identity;
 
-namespace IKM_Retro.Services
-{
-    public class RetrospectiveService(
-        UserManager<User> userManager,
-        RetrospectiveRepository retrospectiveRepository,
-        RetrospectiveGroupRepository retrospectiveGroupRepository,
-        InviteRepository inviteRepository,
-        RetrospectiveGroupItemRepository retrospectiveGroupItemRepository)
-    {
-        public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
-        {
-            _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+namespace IKM_Retro.Services;
 
-            return await retrospectiveRepository.GetByUserId(userId);
+public class RetrospectiveService(
+    UserManager<User> userManager,
+    RetrospectiveRepository retrospectiveRepository,
+    RetrospectiveGroupRepository retrospectiveGroupRepository,
+    InviteRepository inviteRepository,
+    RetrospectiveGroupItemRepository retrospectiveGroupItemRepository)
+{
+    public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
+    {
+        _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+
+        return await retrospectiveRepository.GetByUserId(userId);
+    }
+
+    public async Task Create(string userId, PostRetrospectiveBody body)
+    {
+        User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+
+        var userRetrospectivesCount = await retrospectiveRepository.CountUserRetrospectives(userId);
+
+        if (userRetrospectivesCount >= 3)
+        {
+            throw new BusinessException($"You passed your subscription limit of {3} retrospectives");
         }
 
-        public async Task Create(string userId, PostRetrospectiveBody body)
+        Retrospective retrospective = new()
         {
-            User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+            Id = Guid.NewGuid(),
+            Title = body.Title,
+            Template = body.TemplateType,
+            CreatorUserId = userId
+        };
 
-            int userRetrospectivesCount = await retrospectiveRepository.CountUserRetrospectives(userId);
+        await retrospectiveRepository.Add(retrospective);
 
-            if (userRetrospectivesCount >= 3)
+        var template = RetrospectiveTemplateFactory.Create(body.TemplateType);
+
+        foreach (var group in template.Groups)
+        {
+            await retrospectiveGroupRepository.Add(new Group
             {
-                throw new BusinessException($"You passed your subscribtion limit of {3} retrospectives");
-            }
+                Name = group.Name,
+                Description = group.Description,
+                OrderPosition = group.SortOrder,
+                Retrospective = retrospective
+            });
+        }
 
-            Retrospective retrospective = new()
-            {
-                Id = Guid.NewGuid(),
-                Title = body.Title,
-                Template = body.TemplateType,
-                CreatorUserId = userId
-            };
+        // await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
+        await retrospectiveRepository.AddRelation(new RetrospectiveToUser
+        {
+            Retrospective = retrospective,
+            User = user,
+            Role = RoleTypeEnum.Owner
+        });
 
-            await retrospectiveRepository.Add(retrospective);
+        await retrospectiveRepository.SaveChangesAsync();
+    }
 
-            var template = RetrospectiveTemplateFactory.Create(body.TemplateType);
+    public async Task JoinByInvite(string userId, string code)
+    {
+        User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
 
-            foreach (var group in template.Groups)
-            {
-                await retrospectiveGroupRepository.Add(new Group
-                {
-                    Name = group.Name,
-                    Description = group.Description,
-                    OrderPosition = group.SortOrder,
-                    Retrospective = retrospective
-                });
-            }
+        RetrospectiveInvite invite = await inviteRepository.GetActiveInviteByCode(code)
+                                     ?? throw new NotFoundException("Invite link invalid or expired.");
 
-            // await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
+        var alreadyJoined = await retrospectiveRepository.CheckIfUserJoined(invite.RetrospectiveId, userId);
+
+        if (!alreadyJoined)
+        {
             await retrospectiveRepository.AddRelation(new RetrospectiveToUser
             {
-                Retrospective = retrospective,
+                RetrospectiveId = invite.RetrospectiveId,
+                Retrospective = invite.Retrospective!, // fix
+                UserId = user.Id,
                 User = user,
-                Role = RoleTypeEnum.Owner
+                Role = RoleTypeEnum.Participant
             });
 
             await retrospectiveRepository.SaveChangesAsync();
         }
+    }
 
-        public async Task JoinByInvite(string userId, string code)
+    public async Task Delete(string userId, Guid retrospectiveId)
+    {
+        Retrospective retrospective = await retrospectiveRepository.GetById(retrospectiveId)
+                                      ?? throw new NotFoundException("Retrospective not found.");
+
+        if (retrospective.CreatorUserId != userId)
         {
-            User user = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
-
-            var invite = await inviteRepository.GetActiveInviteByCode(code)
-                         ?? throw new NotFoundException("Invite link invalid or expired.");
-
-            bool alreadyJoined = await retrospectiveRepository.CheckIfUserJoined(invite.RetrospectiveId, userId);
-
-            if (!alreadyJoined)
-            {
-                await retrospectiveRepository.AddRelation(new RetrospectiveToUser
-                {
-                    RetrospectiveId = invite.RetrospectiveId,
-                    Retrospective = invite.Retrospective!, // fix
-                    UserId = user.Id,
-                    User = user,
-                    Role = RoleTypeEnum.Participant
-                });
-
-                await retrospectiveRepository.SaveChangesAsync();
-            }
+            throw new BusinessException("Only the creator can delete this retrospective.");
         }
 
-        public async Task Delete(string userId, Guid retrospectiveId)
-        {
-            var retrospective = await retrospectiveRepository.GetById(retrospectiveId)
-                                ?? throw new NotFoundException("Retrospective not found.");
-
-            if (retrospective.CreatorUserId != userId)
-            {
-                throw new BusinessException("Only the creator can delete this retrospective.");
-            }
-
-            await retrospectiveRepository.Delete(retrospectiveId);
-            await retrospectiveRepository.SaveChangesAsync();
-        }
+        await retrospectiveRepository.Delete(retrospectiveId);
+        await retrospectiveRepository.SaveChangesAsync();
     }
 }

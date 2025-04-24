@@ -4,44 +4,37 @@ using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace IKM_Retro.Repositories
+namespace IKM_Retro.Repositories;
+
+public class RetrospectiveGroupItemRepository(RetroDbContext ctx) : BaseRepository(ctx)
 {
-    public class RetrospectiveGroupItemRepository(RetroDbContext ctx) : BaseRepository(ctx)
+    private readonly RetroDbContext _ctx = ctx;
+
+    public async Task<GroupItem?> GetById(int id)
     {
-        private readonly RetroDbContext _ctx = ctx;
-
-        public async Task<GroupItem?> GetById(int id)
-        {
-            return await _ctx.GroupItems.FindAsync(id);
-        }
-
-        public async Task<List<BaseGroupItemDTO>> GetByRetrospectiveId(Guid retrospectiveId)
-        {
-            return await _ctx.GroupItems
-                .Where(gi => gi.Group.RetrospectiveId == retrospectiveId)
-                .Select(BaseGroupItemDTO.Selector)
-                .ToListAsync();
-        }
-
-        public async Task<List<BaseGroupItemDTO>> GetByGroupId(int groupId)
-        {
-            return await _ctx.GroupItems
-                .Where(gi => gi.GroupId == groupId)
-                .Select(BaseGroupItemDTO.Selector)
-                .ToListAsync();
-        }
-
-
-        public async Task Add(GroupItem groupItem)
-        {
-            await _ctx.GroupItems.AddAsync(groupItem);
-        }
-
-
-
-
-
-
-
+        return await _ctx.GroupItems.FindAsync(id);
     }
+
+    public async Task<List<BaseGroupItemDTO>> GetByRetrospectiveId(Guid retrospectiveId)
+    {
+        return await _ctx.GroupItems
+            .Where(gi => gi.Group.RetrospectiveId == retrospectiveId)
+            .Select(BaseGroupItemDTO.Selector)
+            .ToListAsync();
+    }
+
+    public async Task<List<BaseGroupItemDTO>> GetByGroupId(int groupId)
+    {
+        return await _ctx.GroupItems
+            .Where(gi => gi.GroupId == groupId)
+            .Select(BaseGroupItemDTO.Selector)
+            .ToListAsync();
+    }
+
+
+    public async Task Add(GroupItem groupItem)
+    {
+        await _ctx.GroupItems.AddAsync(groupItem);
+    }
+
 }
