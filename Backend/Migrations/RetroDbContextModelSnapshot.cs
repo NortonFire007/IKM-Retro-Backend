@@ -164,13 +164,13 @@ namespace IKM_Retro.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
+                    b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
@@ -182,10 +182,6 @@ namespace IKM_Retro.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int>("OrderPosition")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Status")
-                        .HasMaxLength(20)
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")

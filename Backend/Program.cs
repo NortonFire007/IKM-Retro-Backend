@@ -88,12 +88,12 @@ services.AddScoped<RetrospectiveRepository>();
 services.AddScoped<RetrospectiveGroupRepository>();
 services.AddScoped<RetrospectiveGroupItemRepository>();
 services.AddScoped<InviteRepository>();
+services.AddScoped<GroupItemRepository>();
 
 services.AddScoped<RetrospectiveService>();
 services.AddScoped<AccountService>();
 services.AddScoped<InviteService>();
-
-// services.AddScoped<IBoardRoleRepository, BoardRoleRepository>();
+services.AddScoped<GroupItemService>();
 
 builder.Services.AddProblemDetails(options =>
 {

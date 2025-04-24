@@ -2,6 +2,7 @@
 using IKM_Retro.DTOs.Retrospective.Group.Items;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace IKM_Retro.Repositories
@@ -19,7 +20,7 @@ namespace IKM_Retro.Repositories
         {
             return await _ctx.GroupItems
                 .Where(gi => gi.Group.RetrospectiveId == retrospectiveId)
-                .Select(BaseGroupItemDTO.Selector)
+                .ProjectToType<BaseGroupItemDTO>()
                 .ToListAsync();
         }
 
@@ -27,7 +28,7 @@ namespace IKM_Retro.Repositories
         {
             return await _ctx.GroupItems
                 .Where(gi => gi.GroupId == groupId)
-                .Select(BaseGroupItemDTO.Selector)
+                .ProjectToType<BaseGroupItemDTO>()
                 .ToListAsync();
         }
 
