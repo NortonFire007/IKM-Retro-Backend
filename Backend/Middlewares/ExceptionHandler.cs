@@ -1,6 +1,8 @@
-﻿using AnimeWebApp.Exceptions.Base;
+﻿using IKM_Retro.Exceptions.Base;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+
+namespace IKM_Retro.Middlewares;
 
 public class ExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {

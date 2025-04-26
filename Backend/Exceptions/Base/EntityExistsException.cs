@@ -1,4 +1,4 @@
-﻿namespace AnimeWebApp.Exceptions.Base;
+﻿namespace IKM_Retro.Exceptions.Base;
 
 public class EntityExistsException : Exception
 {
