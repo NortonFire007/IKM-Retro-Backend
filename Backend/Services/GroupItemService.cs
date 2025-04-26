@@ -1,5 +1,5 @@
-﻿using AnimeWebApp.Exceptions.Base;
-using IKM_Retro.DTOs.Retrospective.Group.Items;
+﻿using IKM_Retro.DTOs.Retrospective.Group.Items;
+using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories;
 using Mapster;
@@ -17,7 +17,7 @@ public class GroupItemService(
         PostGroupItemRequest groupItem,
         CancellationToken cancellationToken = default)
     {
-        Group group = await GetGroupByIdOr404(groupItem.GroupId);
+        Group group = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
 
         await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
@@ -45,11 +45,9 @@ public class GroupItemService(
         PatchGroupItemRequest groupItem,
         CancellationToken cancellationToken = default)
     {
-        GroupItem existingGroupItem = await groupItemRepository.GetByIdAsync(groupItemId)
-                                      ?? throw new NotFoundException("group item", groupItemId);
+        GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
 
-        Group group = await groupRepository.GetById(existingGroupItem.GroupId)
-                       ?? throw new NotFoundException("group", existingGroupItem.GroupId);
+        Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
 
         await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
@@ -68,9 +66,9 @@ public class GroupItemService(
         int? newGroupId = null,
         CancellationToken cancellationToken = default)
     {
-        GroupItem groupItem = await GetGroupItemByIdOr404(groupItemId);
+        GroupItem groupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
 
-        Group currentGroup = await GetGroupByIdOr404(groupItem.GroupId);
+        Group currentGroup = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
         await IsUserInRetrospectiveOrPermissionException(userId, currentGroup.RetrospectiveId);
 
         var targetGroupId = newGroupId ?? currentGroup.Id;
@@ -90,7 +88,7 @@ public class GroupItemService(
         }
         else
         {
-            Group newGroup = await GetGroupByIdOr404(targetGroupId);
+            Group newGroup = await groupRepository.GetByIdOr404Async(targetGroupId);
 
             if (currentGroup.RetrospectiveId != newGroup.RetrospectiveId)
                 throw new BusinessException("You can't move card to another retrospective");
@@ -109,18 +107,15 @@ public class GroupItemService(
 
         return groupItem.Adapt<BaseGroupItemDTO>();
     }
-
-
-
+    
     public async Task DeleteGroupItemAsync(
         string userId,
         int groupItemId,
         CancellationToken cancellationToken = default)
     {
-        GroupItem existingGroupItem = await groupItemRepository.GetByIdAsync(groupItemId)
-                                      ?? throw new NotFoundException("group item", groupItemId);
+        GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
         
-        Group group = await GetGroupByIdOr404(existingGroupItem.GroupId);
+        Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
 
         await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
@@ -144,29 +139,10 @@ public class GroupItemService(
 
     public async Task<BaseGroupItemDTO?> GetGroupItemByIdAsync(int groupItemId)
     {
-        GroupItem item = await GetGroupItemByIdOr404(groupItemId);
+        GroupItem item = await groupItemRepository.GetByIdOr404Async(groupItemId);
         return item.Adapt<BaseGroupItemDTO>();
     }
     
-    // Helper functions
-    private async Task<GroupItem> GetGroupItemByIdOr404(int groupItemId)
-    {
-        GroupItem? groupItem = await groupItemRepository.GetByIdAsync(groupItemId);
-        if (groupItem != null) return groupItem;
-        
-        logger.LogWarning("Group item with Id {GroupItemId} not found.", groupItemId);
-        throw new NotFoundException("Group item not found");
-    }
-    
-    private async Task<Group> GetGroupByIdOr404(int groupId)
-    {
-        Group? group = await groupRepository.GetById(groupId);
-        if (group != null) return group;
-        
-        logger.LogWarning("Group with Id {GroupId} not found.", groupId);
-        throw new NotFoundException("Group not found");
-    }
-
     private async Task<bool> IsUserInRetrospectiveOrPermissionException(string userId, Guid retrospectiveId)
     {   
         if (await retrospectiveRepository.IsUserInRetrospective(retrospectiveId, userId)) return true;

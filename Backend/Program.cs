@@ -12,6 +12,7 @@ using Mapster;
 using IKM_Retro.Services;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.DTOs.Mappings;
+using IKM_Retro.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,7 +87,6 @@ services.AddAuthentication(options =>
 services.AddScoped<RefreshTokenRepository>();
 services.AddScoped<RetrospectiveRepository>();
 services.AddScoped<RetrospectiveGroupRepository>();
-services.AddScoped<RetrospectiveGroupItemRepository>();
 services.AddScoped<InviteRepository>();
 services.AddScoped<GroupItemRepository>();
 

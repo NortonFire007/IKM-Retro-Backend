@@ -1,5 +1,6 @@
 ﻿using IKM_Retro.Data;
 using IKM_Retro.DTOs.Retrospective;
+using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
 using Mapster;
@@ -14,6 +15,15 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
     public async Task<Retrospective?> GetById(Guid id)
     {
         return await _ctx.Retrospectives.FindAsync(id);
+    }
+    public async Task<Retrospective> GetByIdOr404Async(int retrospectiveId)
+    {
+        Retrospective? retrospective = await _ctx.Retrospectives.FindAsync(retrospectiveId);
+
+        if (retrospective == null)
+            throw new NotFoundException($"Retrospective with ID {retrospectiveId} not found");
+
+        return retrospective;
     }
 
     public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)

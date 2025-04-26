@@ -1,4 +1,5 @@
 ﻿using IKM_Retro.Data;
+using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
 using Mapster;
@@ -14,7 +15,15 @@ public class RetrospectiveGroupRepository(RetroDbContext ctx) : BaseRepository(c
     {
         return await _ctx.Groups.FindAsync(id);
     }
+    public async Task<Group> GetByIdOr404Async(int groupId)
+    {
+        Group? group = await _ctx.Groups.FindAsync(groupId);
 
+        if (group == null)
+            throw new NotFoundException($"Group with ID {groupId} not found");
+
+        return group;
+    }
     public async Task<List<BaseGroupDTO>> GetByRetrospectiveId(Guid retrospectiveId)
     {
         return await _ctx.Groups

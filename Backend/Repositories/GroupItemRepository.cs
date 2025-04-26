@@ -1,5 +1,6 @@
 ﻿using IKM_Retro.Data;
 using IKM_Retro.DTOs.Retrospective.Group.Items;
+using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
 using Mapster;
@@ -29,6 +30,16 @@ public class GroupItemRepository(RetroDbContext ctx) : BaseRepository(ctx)
     public async Task<int> CountByGroupId(int groupId)
     {
         return await _ctx.GroupItems.Where(gi => gi.GroupId == groupId).CountAsync();
+    }
+    
+    public async Task<GroupItem> GetByIdOr404Async(int groupItemId)
+    {
+        GroupItem? groupItem = await _ctx.GroupItems.FindAsync(groupItemId);
+
+        if (groupItem == null)
+            throw new NotFoundException($"Group item with ID {groupItemId} not found");
+
+        return groupItem;
     }
 
     public async Task<List<BaseGroupItemDTO>> GetByRetrospectiveId(Guid retrospectiveId)
