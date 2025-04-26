@@ -1,7 +1,6 @@
-﻿using AnimeWebApp.Exceptions.Base;
+﻿using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories;
-using Microsoft.Extensions.Logging;
 
 namespace IKM_Retro.Services;
 

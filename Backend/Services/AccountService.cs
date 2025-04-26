@@ -1,4 +1,4 @@
-﻿using AnimeWebApp.Exceptions.Base;
+﻿using IKM_Retro.Exceptions.Base;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.DTOs.User;
 using IKM_Retro.Models;
