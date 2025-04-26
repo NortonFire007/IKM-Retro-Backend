@@ -1,6 +1,7 @@
 ﻿using IKM_Retro.Data;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace IKM_Retro.Repositories;
@@ -18,7 +19,7 @@ public class RetrospectiveGroupRepository(RetroDbContext ctx) : BaseRepository(c
     {
         return await _ctx.Groups
             .Where(g => g.RetrospectiveId == retrospectiveId)
-            .Select(BaseGroupDTO.Selector)
+            .ProjectToType<BaseGroupDTO>()
             .ToListAsync();
     }
 

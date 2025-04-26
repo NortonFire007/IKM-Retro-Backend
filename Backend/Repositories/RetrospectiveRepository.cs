@@ -43,17 +43,13 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
         await _ctx.RetrospectiveToUser.AddAsync(retrospectiveToUser);
     }
         
-    public async Task<bool> CheckIfUserJoined(Guid retrospectiveId, string userId)
+    public async Task<bool> IsUserInRetrospective(Guid retrospectiveId, string userId)
     {
         return await _ctx.RetrospectiveToUser.AnyAsync(rtu => rtu.RetrospectiveId == retrospectiveId && rtu.UserId == userId);
     }
         
-    public async Task Delete(Guid id)
+    public void Delete(Retrospective retrospective)
     {
-        Retrospective? retrospective = await _ctx.Retrospectives.FindAsync(id);
-        if (retrospective != null)
-        {
-            _ctx.Retrospectives.Remove(retrospective);
-        }
+        _ctx.Retrospectives.Remove(retrospective);
     }
 }

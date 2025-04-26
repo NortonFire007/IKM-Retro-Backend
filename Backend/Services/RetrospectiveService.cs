@@ -13,8 +13,7 @@ public class RetrospectiveService(
     UserManager<User> userManager,
     RetrospectiveRepository retrospectiveRepository,
     RetrospectiveGroupRepository retrospectiveGroupRepository,
-    InviteRepository inviteRepository,
-    RetrospectiveGroupItemRepository retrospectiveGroupItemRepository)
+    InviteRepository inviteRepository)
 {
     public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
     {
@@ -57,7 +56,6 @@ public class RetrospectiveService(
             });
         }
 
-        // await retrospectiveRepository.AddRelation(new() { Retrospective = retrospective, User = user });
         await retrospectiveRepository.AddRelation(new RetrospectiveToUser
         {
             Retrospective = retrospective,
@@ -75,9 +73,7 @@ public class RetrospectiveService(
         RetrospectiveInvite invite = await inviteRepository.GetActiveInviteByCode(code)
                                      ?? throw new NotFoundException("Invite link invalid or expired.");
 
-        var alreadyJoined = await retrospectiveRepository.CheckIfUserJoined(invite.RetrospectiveId, userId);
-
-        if (!alreadyJoined)
+        if (!await retrospectiveRepository.IsUserInRetrospective(invite.RetrospectiveId, userId))
         {
             await retrospectiveRepository.AddRelation(new RetrospectiveToUser
             {
@@ -102,7 +98,7 @@ public class RetrospectiveService(
             throw new BusinessException("Only the creator can delete this retrospective.");
         }
 
-        await retrospectiveRepository.Delete(retrospectiveId);
+        retrospectiveRepository.Delete(retrospective);
         await retrospectiveRepository.SaveChangesAsync();
     }
 }

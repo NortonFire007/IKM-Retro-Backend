@@ -1,6 +1,8 @@
 ﻿using IKM_Retro.Data;
+using IKM_Retro.DTOs.Retrospective.Group.Items;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories.Base;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace IKM_Retro.Repositories;
@@ -19,29 +21,64 @@ public class GroupItemRepository(RetroDbContext ctx) : BaseRepository(ctx)
         _ctx.GroupItems.Update(groupItem);
     }
 
-    public async Task DeleteAsync(int groupItemId)
+    public void DeleteAsync(GroupItem item)
     {
-        var item = await _ctx.GroupItems.FirstOrDefaultAsync(x => x.Id == groupItemId);
-        if (item != null)
-        {
-            _ctx.GroupItems.Remove(item);
-        }
+        _ctx.GroupItems.Remove(item);
     }
 
-    public async Task<List<GroupItem>> GetByRetrospectiveIdAsync(Guid retrospectiveId)
+    public async Task<int> CountByGroupId(int groupId)
+    {
+        return await _ctx.GroupItems.Where(gi => gi.GroupId == groupId).CountAsync();
+    }
+
+    public async Task<List<BaseGroupItemDTO>> GetByRetrospectiveId(Guid retrospectiveId)
     {
         return await _ctx.GroupItems
-            .Include(x => x.Group)
-            .Where(x => x.Group.RetrospectiveId == retrospectiveId)
-            .OrderBy(x => x.Group.OrderPosition)
-            .ThenBy(x => x.OrderPosition)
+            .Where(gi => gi.Group.RetrospectiveId == retrospectiveId)
+            .ProjectToType<BaseGroupItemDTO>()
+            .ToListAsync();
+    }
+
+    public async Task<List<BaseGroupItemDTO>> GetByGroupId(int groupId)
+    {
+        return await _ctx.GroupItems
+            .Where(gi => gi.GroupId == groupId)
+            .ProjectToType<BaseGroupItemDTO>()
             .ToListAsync();
     }
 
     public async Task<GroupItem?> GetByIdAsync(int groupItemId)
     {
         return await _ctx.GroupItems
-            .Include(x => x.Group)
             .FirstOrDefaultAsync(x => x.Id == groupItemId);
+    }
+    public async Task ShiftOrderPositionsForInsert(int groupId, int fromPosition)
+    {
+        await _ctx.GroupItems
+            .Where(x => x.GroupId == groupId && x.OrderPosition >= fromPosition)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OrderPosition, x => x.OrderPosition + 1));
+    }
+
+    public async Task ShiftOrderPositionsForRemove(int groupId, int fromPosition)
+    {
+        await _ctx.GroupItems
+            .Where(x => x.GroupId == groupId && x.OrderPosition > fromPosition)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OrderPosition, x => x.OrderPosition - 1));
+    }
+
+    public async Task ShiftOrderPositionsWithinGroup(int groupId, int oldPosition, int newPosition)
+    {
+        if (newPosition < oldPosition)
+        {
+            await _ctx.GroupItems
+                .Where(x => x.GroupId == groupId && x.OrderPosition >= newPosition && x.OrderPosition < oldPosition)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OrderPosition, x => x.OrderPosition + 1));
+        }
+        else if (newPosition > oldPosition)
+        {
+            await _ctx.GroupItems
+                .Where(x => x.GroupId == groupId && x.OrderPosition <= newPosition && x.OrderPosition > oldPosition)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OrderPosition, x => x.OrderPosition - 1));
+        }
     }
 }

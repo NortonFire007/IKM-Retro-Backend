@@ -37,12 +37,5 @@ namespace IKM_Retro.Repositories
         {
             await _ctx.GroupItems.AddAsync(groupItem);
         }
-
-
-
-
-
-
-
     }
 }

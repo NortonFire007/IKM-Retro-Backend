@@ -1,7 +1,6 @@
 ﻿using IKM_Retro.Controllers.Base;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.DTOs.Retrospective.Group.Items;
-using IKM_Retro.Models.Retro;
 using IKM_Retro.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,48 +16,48 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PostGroupItemRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreateGroupItemAsync(UserId, request, cancellationToken);
+        BaseGroupItemDTO result = await service.CreateGroupItemAsync(UserId, request, cancellationToken);
         return Ok(result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] GroupItem groupItem, CancellationToken cancellationToken)
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] PatchGroupItemRequest groupItem, CancellationToken cancellationToken)
     {
-        
-
-        var result = await service.UpdateGroupItemAsync(groupItem, cancellationToken);
+        BaseGroupItemDTO result = await service.PatchGroupItemAsync(UserId, id, groupItem, cancellationToken);
         return Ok(result);
     }
 
-    [HttpPut("{id}/move")]
-    public async Task<IActionResult> Move(int id, [FromQuery] int newGroupId, CancellationToken cancellationToken)
+    [HttpPut("{id:int}/move")]
+    public async Task<IActionResult> Move(int id, [FromBody] MoveGroupItemRequest request , CancellationToken cancellationToken)
     {
-        var result = await service.MoveGroupItemAsync(id, newGroupId, cancellationToken);
+        BaseGroupItemDTO result = await service.MoveGroupItemAsync(
+            UserId,
+            id,
+            request.OrderPosition,
+            request.NewGroupId,
+            cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteGroupItemAsync(id, cancellationToken);
+        await service.DeleteGroupItemAsync(UserId, id, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("retrospective/{retrospectiveId}")]
     public async Task<IActionResult> GetByRetrospective(Guid retrospectiveId)
     {
-        var items = await service.GetGroupItemsByRetrospectiveIdAsync(retrospectiveId);
+        var items = await service.GetGroupItemsByRetrospectiveIdAsync(UserId, retrospectiveId);
         return Ok(items);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var item = await service.GetGroupItemByIdAsync(id);
-        if (item == null)
-        {
-            return NotFound();
-        }
+        BaseGroupItemDTO? item = await service.GetGroupItemByIdAsync(id);
+
         return Ok(item);
     }
 }

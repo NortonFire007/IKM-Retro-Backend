@@ -16,9 +16,8 @@ public class BaseRetrospectiveDTO : AuditableDTO<Guid>
 
 public class RetrospectiveDto : BaseRetrospectiveDTO
 {
-    public required List<BaseGroupDTO> Groups { get; set; }
+    public required List<GroupDTO> Groups { get; set; }
 
     public required BaseUserDTO AssignedUser { get; set; }
-        
     public required List<BaseUserDTO> AssignedUsers { get; set; }
 }
