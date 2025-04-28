@@ -1,15 +1,18 @@
-﻿using IKM_Retro.DTOs.Retrospective;
+﻿using IKM_Retro.Controllers.Base;
+using IKM_Retro.DTOs.Auth;
+using IKM_Retro.DTOs.Retrospective;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace IKM_Retro.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class InviteController(InviteService inviteService) : ControllerBase
+public class InviteController(InviteService inviteService, IOptions<JwtOptions> options) : BaseAuthController(options)
 {
     [HttpPost("{retrospectiveId:guid}")]
     public async Task<IActionResult> GenerateInvite(Guid retrospectiveId, CancellationToken cancellationToken)

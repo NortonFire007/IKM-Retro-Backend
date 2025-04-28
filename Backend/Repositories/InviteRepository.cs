@@ -6,17 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace IKM_Retro.Repositories;
 
 public class InviteRepository(RetroDbContext ctx) : BaseRepository(ctx)
- {
+{
     private readonly RetroDbContext _ctx = ctx;
     
-
-    public async Task<Retrospective?> GetRetrospectiveWithInviteAsync(Guid retrospectiveId,
-        CancellationToken cancellationToken)
+    public async Task AddInviteAsync(RetrospectiveInvite invite, CancellationToken cancellationToken)
     {
-        return await _ctx.Retrospectives
-            .Include(r => r.InviteLink)
-            .FirstOrDefaultAsync(r => r.Id == retrospectiveId, cancellationToken);
+        await _ctx.RetrospectiveInvites.AddAsync(invite, cancellationToken);
     }
+
 
     public async Task<RetrospectiveInvite?> GetActiveInviteAsync(string code, CancellationToken cancellationToken)
     {
@@ -39,20 +36,16 @@ public class InviteRepository(RetroDbContext ctx) : BaseRepository(ctx)
         _ctx.RetrospectiveInvites.RemoveRange(invites);
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        await _ctx.SaveChangesAsync(cancellationToken);
-    }
-
     public void UpdateRetrospective(Retrospective retrospective)
     {
         _ctx.Retrospectives.Update(retrospective);
     }
-    
+
     public async Task<RetrospectiveInvite?> GetActiveInviteByCode(string code)
     {
         return await _ctx.RetrospectiveInvites
             .Include(r => r.Retrospective)
-            .FirstOrDefaultAsync(i => i.Code == code && i.IsActive && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow));
+            .FirstOrDefaultAsync(i =>
+                i.Code == code && i.IsActive && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow));
     }
 }

@@ -62,4 +62,12 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
     {
         _ctx.Retrospectives.Remove(retrospective);
     }
+    
+    public async Task<Retrospective?> GetRetrospectiveWithInviteAsync(Guid retrospectiveId,
+        CancellationToken cancellationToken)
+    {
+        return await _ctx.Retrospectives
+            .Include(r => r.InviteLink)
+            .FirstOrDefaultAsync(r => r.Id == retrospectiveId, cancellationToken);
+    }
 }

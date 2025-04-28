@@ -4,7 +4,7 @@ using IKM_Retro.Repositories;
 
 namespace IKM_Retro.Services;
 
-public class InviteService(InviteRepository repository, ILogger<InviteService> logger)
+public class InviteService(InviteRepository repository, RetrospectiveRepository retrospectiveRepository, ILogger<InviteService> logger)
 {
     public async Task<RetrospectiveInvite> GenerateInviteAsync(Guid retrospectiveId,
         CancellationToken cancellationToken = default)
@@ -13,7 +13,7 @@ public class InviteService(InviteRepository repository, ILogger<InviteService> l
 
         await CleanupExpiredInvitesAsync(cancellationToken);
 
-        Retrospective? retrospective = await repository.GetRetrospectiveWithInviteAsync(retrospectiveId, cancellationToken);
+        Retrospective? retrospective = await retrospectiveRepository.GetRetrospectiveWithInviteAsync(retrospectiveId, cancellationToken);
 
         if (retrospective == null)
         {
@@ -37,10 +37,8 @@ public class InviteService(InviteRepository repository, ILogger<InviteService> l
             IsActive = true
         };
 
-        retrospective.InviteLink = invite;
-
-        repository.UpdateRetrospective(retrospective);
-        await repository.SaveChangesAsync(cancellationToken);
+        await repository.AddInviteAsync(invite, cancellationToken);
+        await repository.SaveChangesAsyncWithCancellation(cancellationToken);
 
         logger.LogInformation("Invite generated successfully. Code: {InviteCode}", invite.Code);
 
@@ -75,7 +73,7 @@ public class InviteService(InviteRepository repository, ILogger<InviteService> l
         if (expiredInvites.Any())
         {
             repository.RemoveExpiredInvites(expiredInvites);
-            await repository.SaveChangesAsync(cancellationToken);
+            await repository.SaveChangesAsyncWithCancellation(cancellationToken);
 
             logger.LogInformation("Deleted {Count} expired invites.", expiredInvites.Count);
         }
