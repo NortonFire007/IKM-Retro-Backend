@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 
 namespace IKM_Retro.Hubs;
 
+[Authorize]
 public class GroupItemHub : Hub
 {
     public async Task SendGroupItemUpdate(string retrospectiveId, object payload)

@@ -1,4 +1,6 @@
-﻿using IKM_Retro.DTOs.Retrospective.Group.Items;
+﻿using IKM_Retro.DTOs.Retrospective.ActionItem;
+using IKM_Retro.DTOs.Retrospective.Group.Items;
+using IKM_Retro.Enums;
 using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Hubs;
 using IKM_Retro.Models.Retro;
@@ -13,6 +15,7 @@ public class GroupItemService(
     RetrospectiveGroupRepository groupRepository,
     RetrospectiveRepository retrospectiveRepository,
     ILogger<GroupItemService> logger,
+    ActionItemRepository actionItemRepository,
     IHubContext<GroupItemHub> hubContext)
 {
     public async Task<BaseGroupItemDTO> CreateGroupItemAsync(
@@ -171,5 +174,33 @@ public class GroupItemService(
         if (await retrospectiveRepository.IsUserInRetrospective(retrospectiveId, userId)) return true;
         logger.LogWarning("User {UserId} is not allowed to access retrospective {RetrospectiveId}", userId, retrospectiveId);
         throw new PermissionException("You are not allowed to create or update group items in this retrospective");
+    }
+    
+    public async Task<ActionItem> ConvertGroupItemToActionItemAsync(
+        string userId,
+        int groupItemId,
+        ConvertGroupItemToActionItemDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var groupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
+        var group = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
+        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
+
+        var actionItem = new ActionItem
+        {
+            ActionId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            RetrospectiveId = group.RetrospectiveId,
+            Description = groupItem.Content,
+            AssignedUserId = dto.AssignedUserId,
+            DueDate = null,
+            Status = dto.Status ?? ActionItemStatus.Pending,
+            Priority = dto.Priority ?? ActionItemPriority.Medium
+        };
+
+        await actionItemRepository.AddAsync(actionItem, cancellationToken);
+        await actionItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
+
+        return actionItem;
     }
 }
