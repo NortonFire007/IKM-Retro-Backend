@@ -1,8 +1,12 @@
-﻿using IKM_Retro.DTOs.Retrospective.Group.Items;
+﻿using IKM_Retro.DTOs.Retrospective.ActionItem;
+using IKM_Retro.DTOs.Retrospective.Group.Items;
+using IKM_Retro.Enums;
 using IKM_Retro.Exceptions.Base;
+using IKM_Retro.Hubs;
 using IKM_Retro.Models.Retro;
 using IKM_Retro.Repositories;
 using Mapster;
+using Microsoft.AspNetCore.SignalR;
 
 namespace IKM_Retro.Services;
 
@@ -10,7 +14,9 @@ public class GroupItemService(
     GroupItemRepository groupItemRepository,
     RetrospectiveGroupRepository groupRepository,
     RetrospectiveRepository retrospectiveRepository,
-    ILogger<GroupItemService> logger)
+    ILogger<GroupItemService> logger,
+    ActionItemRepository actionItemRepository,
+    IHubContext<GroupItemHub> hubContext)
 {
     public async Task<BaseGroupItemDTO> CreateGroupItemAsync(
         string userId,
@@ -36,7 +42,13 @@ public class GroupItemService(
         
         await groupItemRepository.CreateAsync(newGroupItem);
         await groupItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
-        return newGroupItem.Adapt<BaseGroupItemDTO>();
+
+        var dto = newGroupItem.Adapt<BaseGroupItemDTO>();
+
+        await hubContext.Clients.Group(group.RetrospectiveId.ToString())
+            .SendAsync("ReceiveGroupItemCreated", dto);
+
+        return dto;
     }
 
     public async Task<BaseGroupItemDTO> PatchGroupItemAsync(
@@ -56,7 +68,13 @@ public class GroupItemService(
         
         logger.LogInformation("Updating group item with Id {GroupItemId}", groupItemId);
         await groupItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
-        return existingGroupItem.Adapt<BaseGroupItemDTO>();
+        
+        var dto = existingGroupItem.Adapt<BaseGroupItemDTO>();
+
+        await hubContext.Clients.Group(group.RetrospectiveId.ToString())
+            .SendAsync("ReceiveGroupItemUpdated", dto);
+
+        return dto;
     }
 
     public async Task<BaseGroupItemDTO> MoveGroupItemAsync(
@@ -105,7 +123,12 @@ public class GroupItemService(
 
         await groupItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
 
-        return groupItem.Adapt<BaseGroupItemDTO>();
+        var dto = groupItem.Adapt<BaseGroupItemDTO>();
+
+        await hubContext.Clients.Group(currentGroup.RetrospectiveId.ToString())
+            .SendAsync("ReceiveGroupItemMoved", dto);
+
+        return dto;
     }
     
     public async Task DeleteGroupItemAsync(
@@ -122,6 +145,9 @@ public class GroupItemService(
         logger.LogInformation("Deleting group item with Id {GroupItemId}", groupItemId);
         groupItemRepository.DeleteAsync(existingGroupItem);
         await groupItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
+        
+        await hubContext.Clients.Group(group.RetrospectiveId.ToString())
+            .SendAsync("ReceiveGroupItemDeleted", groupItemId);
     }
 
     public async Task<List<BaseGroupItemDTO>> GetGroupItemsByRetrospectiveIdAsync(string userId, Guid retrospectiveId)
@@ -148,5 +174,33 @@ public class GroupItemService(
         if (await retrospectiveRepository.IsUserInRetrospective(retrospectiveId, userId)) return true;
         logger.LogWarning("User {UserId} is not allowed to access retrospective {RetrospectiveId}", userId, retrospectiveId);
         throw new PermissionException("You are not allowed to create or update group items in this retrospective");
+    }
+    
+    public async Task<ActionItem> ConvertGroupItemToActionItemAsync(
+        string userId,
+        int groupItemId,
+        ConvertGroupItemToActionItemDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var groupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
+        var group = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
+        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
+
+        var actionItem = new ActionItem
+        {
+            ActionId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            RetrospectiveId = group.RetrospectiveId,
+            Description = groupItem.Content,
+            AssignedUserId = dto.AssignedUserId,
+            DueDate = null,
+            Status = dto.Status ?? ActionItemStatus.Pending,
+            Priority = dto.Priority ?? ActionItemPriority.Medium
+        };
+
+        await actionItemRepository.AddAsync(actionItem, cancellationToken);
+        await actionItemRepository.SaveChangesAsyncWithCancellation(cancellationToken);
+
+        return actionItem;
     }
 }

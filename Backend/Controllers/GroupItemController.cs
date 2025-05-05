@@ -1,5 +1,6 @@
 ﻿using IKM_Retro.Controllers.Base;
 using IKM_Retro.DTOs.Auth;
+using IKM_Retro.DTOs.Retrospective.ActionItem;
 using IKM_Retro.DTOs.Retrospective.Group.Items;
 using IKM_Retro.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -60,4 +61,15 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
 
         return Ok(item);
     }
+    
+    [HttpPost("{id:int}/convert-to-action")]
+    public async Task<IActionResult> ConvertToActionItem(
+        int id,
+        [FromBody] ConvertGroupItemToActionItemDto dto,
+        CancellationToken cancellationToken)
+    {
+        var actionItem = await service.ConvertGroupItemToActionItemAsync(UserId, id, dto, cancellationToken);
+        return CreatedAtAction(nameof(ActionItemController.Get), "ActionItem", new { id = actionItem.ActionId }, actionItem);
+    }
+
 }

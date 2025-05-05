@@ -12,6 +12,7 @@ using Mapster;
 using IKM_Retro.Services;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.DTOs.Mappings;
+using IKM_Retro.Hubs;
 using IKM_Retro.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +36,11 @@ services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
     {
-        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        builder
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
@@ -83,7 +88,6 @@ services.AddAuthentication(options =>
 });
 
 
-
 services.AddScoped<RefreshTokenRepository>();
 services.AddScoped<RetrospectiveRepository>();
 services.AddScoped<RetrospectiveGroupRepository>();
@@ -91,6 +95,7 @@ services.AddScoped<InviteRepository>();
 services.AddScoped<GroupItemRepository>();
 services.AddScoped<GroupItemVoteRepository>();
 services.AddScoped<CommentRepository>();
+services.AddScoped<ActionItemRepository>();
 
 services.AddScoped<RetrospectiveService>();
 services.AddScoped<AccountService>();
@@ -98,6 +103,7 @@ services.AddScoped<InviteService>();
 services.AddScoped<GroupItemService>();
 services.AddScoped<GroupItemVoteService>();
 services.AddScoped<CommentService>();
+services.AddScoped<ActionItemService>();
 
 builder.Services.AddProblemDetails(options =>
 {
@@ -109,6 +115,7 @@ builder.Services.AddProblemDetails(options =>
 });
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Services.AddSignalR();
 
 WebApplication app = builder.Build();
 
@@ -118,6 +125,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.ApplyMigrations();
 }
+
+app.MapHub<GroupItemHub>("/hubs/groupItem");
 
 app.UseExceptionHandler();
 

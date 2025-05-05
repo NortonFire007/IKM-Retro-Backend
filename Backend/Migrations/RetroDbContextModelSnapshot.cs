@@ -49,6 +49,54 @@ namespace IKM_Retro.Migrations
                     b.ToTable("AspNetUserRefreshTokens");
                 });
 
+            modelBuilder.Entity("IKM_Retro.Models.Retro.ActionItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("ActionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AssignedUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RetrospectiveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetrospectiveId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActionItems");
+                });
+
             modelBuilder.Entity("IKM_Retro.Models.Retro.Comment", b =>
                 {
                     b.Property<int>("Id")
@@ -500,6 +548,23 @@ namespace IKM_Retro.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("IKM_Retro.Models.Retro.ActionItem", b =>
+                {
+                    b.HasOne("IKM_Retro.Models.Retro.Retrospective", "Retrospective")
+                        .WithMany()
+                        .HasForeignKey("RetrospectiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IKM_Retro.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Retrospective");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("IKM_Retro.Models.Retro.Comment", b =>
