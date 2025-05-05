@@ -21,8 +21,7 @@ public class Comment : Auditable<int>
     public int Likes { get; set; }
 
     public bool IsAnonymous { get; set; }
-
-    public ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
+    
     
     public User? User { get; set; }
 }

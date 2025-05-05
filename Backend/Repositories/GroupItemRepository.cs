@@ -92,4 +92,9 @@ public class GroupItemRepository(RetroDbContext ctx) : BaseRepository(ctx)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.OrderPosition, x => x.OrderPosition - 1));
         }
     }
+
+    public IQueryable<GroupItem> GetAllQuery()
+    {
+        return _ctx.GroupItems.AsQueryable();
+    }
 }

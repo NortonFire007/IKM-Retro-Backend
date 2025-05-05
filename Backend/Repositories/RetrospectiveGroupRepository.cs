@@ -36,4 +36,9 @@ public class RetrospectiveGroupRepository(RetroDbContext ctx) : BaseRepository(c
     {
         await _ctx.Groups.AddAsync(group);
     }
+
+    public IQueryable<Group> GetAllQuery()
+    {
+        return _ctx.Groups.AsQueryable();
+    }
 }
