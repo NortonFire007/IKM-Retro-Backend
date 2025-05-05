@@ -11,7 +11,7 @@ namespace IKM_Retro.Repositories;
 public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
 {
     private readonly RetroDbContext _ctx = ctx;
-
+    
     public async Task<Retrospective?> GetById(Guid id)
     {
         return await _ctx.Retrospectives.FindAsync(id);
@@ -69,5 +69,10 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
         return await _ctx.Retrospectives
             .Include(r => r.InviteLink)
             .FirstOrDefaultAsync(r => r.Id == retrospectiveId, cancellationToken);
+    }
+    
+    public IQueryable<RetrospectiveToUser> GetRetrospectiveUsersQuery()
+    {
+        return _ctx.RetrospectiveToUser.AsQueryable();
     }
 }
