@@ -18,8 +18,7 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
     {
         return await retrospectiveService.GetByUserId(UserId);
     }
-
-    // POST api/<RetrospectiveController>
+    
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] PostRetrospectiveBody body)
     {
@@ -35,6 +34,7 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
     }
         
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "OwnerOnly")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await retrospectiveService.Delete(UserId, id);

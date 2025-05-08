@@ -16,6 +16,8 @@ public class RetroDbContext(DbContextOptions<RetroDbContext> options) : Identity
     public DbSet<Comment> Comments { get; set; }
     public DbSet<RetrospectiveInvite> RetrospectiveInvites { get; set; }
     public DbSet<ActionItem> ActionItems { get; set; }
+    public object RetrospectiveToUsers { get; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

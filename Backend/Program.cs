@@ -8,12 +8,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DotNetEnv;
+using IKM_Retro.Authorization;
 using Mapster;
 using IKM_Retro.Services;
 using IKM_Retro.DTOs.Auth;
 using IKM_Retro.DTOs.Mappings;
+using IKM_Retro.Enums;
 using IKM_Retro.Hubs;
 using IKM_Retro.Middlewares;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +91,18 @@ services.AddAuthentication(options =>
 });
 
 
+services.AddHttpContextAccessor();
+services.AddScoped<IAuthorizationHandler, RetrospectiveRoleHandler>();
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("OwnerOnly", policy =>
+        policy.Requirements.Add(new RetrospectiveRoleRequirement(RoleTypeEnum.Owner)));
+
+    options.AddPolicy("ParticipantOrOwner", policy =>
+        policy.Requirements.Add(new RetrospectiveRoleRequirement(RoleTypeEnum.Participant, RoleTypeEnum.Owner)));
+});
+
+
 services.AddScoped<RefreshTokenRepository>();
 services.AddScoped<RetrospectiveRepository>();
 services.AddScoped<RetrospectiveGroupRepository>();
@@ -104,6 +119,7 @@ services.AddScoped<GroupItemService>();
 services.AddScoped<GroupItemVoteService>();
 services.AddScoped<CommentService>();
 services.AddScoped<ActionItemService>();
+services.AddScoped<RoleService>();
 
 builder.Services.AddProblemDetails(options =>
 {
