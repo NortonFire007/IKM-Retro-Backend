@@ -15,6 +15,7 @@ namespace IKM_Retro.Controllers;
 public class GroupItemController(GroupItemService service, IOptions<JwtOptions> options) : BaseAuthController(options)
 {
     [HttpPost]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Create([FromBody] PostGroupItemRequest request, CancellationToken cancellationToken)
     {
         BaseGroupItemDTO result = await service.CreateGroupItemAsync(UserId, request, cancellationToken);
@@ -22,6 +23,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Update(int id, [FromBody] PatchGroupItemRequest groupItem, CancellationToken cancellationToken)
     {
         BaseGroupItemDTO result = await service.PatchGroupItemAsync(UserId, id, groupItem, cancellationToken);
@@ -29,6 +31,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
 
     [HttpPut("{id:int}/move")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Move(int id, [FromBody] MoveGroupItemRequest request , CancellationToken cancellationToken)
     {
         BaseGroupItemDTO result = await service.MoveGroupItemAsync(
@@ -41,6 +44,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         await service.DeleteGroupItemAsync(UserId, id, cancellationToken);
@@ -48,6 +52,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
 
     [HttpGet("retrospective/{retrospectiveId}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetByRetrospective(Guid retrospectiveId)
     {
         var items = await service.GetGroupItemsByRetrospectiveIdAsync(UserId, retrospectiveId);
@@ -55,6 +60,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
 
     [HttpGet("{id}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetById(int id)
     {
         BaseGroupItemDTO? item = await service.GetGroupItemByIdAsync(id);
@@ -63,6 +69,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     }
     
     [HttpPost("{id:int}/convert-to-action")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> ConvertToActionItem(
         int id,
         [FromBody] ConvertGroupItemToActionItemDto dto,

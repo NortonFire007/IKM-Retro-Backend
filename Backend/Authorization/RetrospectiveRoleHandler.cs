@@ -21,15 +21,13 @@ public class RetrospectiveRoleHandler : AuthorizationHandler<RetrospectiveRoleRe
         if (httpContext == null)
             return;
 
-        var userId = context.User.FindFirst("userId")?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return;
+        var userId = httpContext.User.FindFirst("userId")?.Value;
 
-        if (!httpContext.Request.RouteValues.TryGetValue("retrospectiveId", out var ridValue) ||
-            !Guid.TryParse(ridValue?.ToString(), out var retrospectiveId))
-        {
+        var retrospectiveIdObj = httpContext.GetRouteValue("id");
+        if (retrospectiveIdObj == null) return;
+
+        if (!Guid.TryParse(retrospectiveIdObj.ToString(), out var retrospectiveId))
             return;
-        }
 
         var role = await _roleService.GetUserRoleAsync(userId, retrospectiveId);
 
