@@ -19,7 +19,7 @@ public class GroupItem : Auditable<int>
 
     public bool IsHidden { get; set; }
 
-    public ICollection<Comment?>? Comments { get; set; }
+    public ICollection<GroupItemComment?>? Comments { get; set; }
     public Group? Group { get; set; }
 
     public User? AssignedUser { get; set; }

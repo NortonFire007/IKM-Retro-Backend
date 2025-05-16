@@ -12,38 +12,38 @@ namespace IKM_Retro.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public class CommentController(CommentService service, IOptions<JwtOptions> options) : BaseAuthController(options)
+public class GroupItemCommentController(GroupItemCommentService service, IOptions<JwtOptions> options) : BaseAuthController(options)
 {
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] PostCommentRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] PostGroupItemCommentRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreateCommentAsync(UserId!, request, cancellationToken);
+        var result = await service.CreateAsync(UserId!, request, cancellationToken);
         return Ok(result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Comment comment, CancellationToken cancellationToken)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] GroupItemComment groupItemComment, CancellationToken cancellationToken)
     {
-        if (id != comment.Id)
+        if (id != groupItemComment.Id)
         {
             return BadRequest("Mismatched Comment ID");
         }
 
-        var result = await service.UpdateCommentAsync(comment, cancellationToken);
+        var result = await service.UpdateAsync(groupItemComment, cancellationToken);
         return Ok(result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteCommentAsync(id, cancellationToken);
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var comment = await service.GetCommentByIdAsync(id);
+        var comment = await service.GetByIdAsync(id);
         if (comment == null)
         {
             return NotFound();
@@ -51,10 +51,10 @@ public class CommentController(CommentService service, IOptions<JwtOptions> opti
         return Ok(comment);
     }
 
-    [HttpGet("group-item/{groupItemId}")]
+    [HttpGet("group-item/{groupItemId:int}")]
     public async Task<IActionResult> GetByGroupItem(int groupItemId)
     {
-        var comments = await service.GetCommentsByGroupItemIdAsync(groupItemId);
+        var comments = await service.GetByGroupItemIdAsync(groupItemId);
         return Ok(comments);
     }
 }

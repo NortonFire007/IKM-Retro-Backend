@@ -1,5 +1,4 @@
-﻿using IKM_Retro.DTOs.Retrospective.ActionItem;
-using IKM_Retro.DTOs.Retrospective.Group.Items;
+﻿using IKM_Retro.DTOs.Retrospective.Group.Items;
 using IKM_Retro.Enums;
 using IKM_Retro.Exceptions.Base;
 using IKM_Retro.Hubs;
@@ -13,7 +12,6 @@ namespace IKM_Retro.Services;
 public class GroupItemService(
     GroupItemRepository groupItemRepository,
     RetrospectiveGroupRepository groupRepository,
-    RetrospectiveRepository retrospectiveRepository,
     ILogger<GroupItemService> logger,
     ActionItemRepository actionItemRepository,
     IHubContext<GroupItemHub> hubContext)
@@ -24,8 +22,6 @@ public class GroupItemService(
         CancellationToken cancellationToken = default)
     {
         Group group = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
-
-        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
         logger.LogInformation("Creating new group item for group {GroupId}", groupItem.GroupId);
         
@@ -52,7 +48,6 @@ public class GroupItemService(
     }
 
     public async Task<BaseGroupItemDTO> PatchGroupItemAsync(
-        string userId,
         int groupItemId,
         PatchGroupItemRequest groupItem,
         CancellationToken cancellationToken = default)
@@ -60,8 +55,6 @@ public class GroupItemService(
         GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
 
         Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
-
-        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
         if (!string.IsNullOrEmpty(groupItem.Content))
             existingGroupItem.Content = groupItem.Content;
@@ -78,7 +71,6 @@ public class GroupItemService(
     }
 
     public async Task<BaseGroupItemDTO> MoveGroupItemAsync(
-        string userId,
         int groupItemId,
         int requestedOrderPosition,
         int? newGroupId = null,
@@ -87,7 +79,6 @@ public class GroupItemService(
         GroupItem groupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
 
         Group currentGroup = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
-        await IsUserInRetrospectiveOrPermissionException(userId, currentGroup.RetrospectiveId);
 
         var targetGroupId = newGroupId ?? currentGroup.Id;
         int groupItemCount;
@@ -132,15 +123,12 @@ public class GroupItemService(
     }
     
     public async Task DeleteGroupItemAsync(
-        string userId,
         int groupItemId,
         CancellationToken cancellationToken = default)
     {
         GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
         
         Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
-
-        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
         
         logger.LogInformation("Deleting group item with Id {GroupItemId}", groupItemId);
         groupItemRepository.DeleteAsync(existingGroupItem);
@@ -150,14 +138,8 @@ public class GroupItemService(
             .SendAsync("ReceiveGroupItemDeleted", groupItemId);
     }
 
-    public async Task<List<BaseGroupItemDTO>> GetGroupItemsByRetrospectiveIdAsync(string userId, Guid retrospectiveId)
+    public async Task<List<BaseGroupItemDTO>> GetGroupItemsByRetrospectiveIdAsync(Guid retrospectiveId)
     {
-        if (!await retrospectiveRepository.IsUserInRetrospective(retrospectiveId, userId))
-        {
-            logger.LogWarning("User {UserId} is not allowed to access retrospective {RetrospectiveId}", userId, retrospectiveId);
-            throw new PermissionException("You are not allowed to create or update group items in this retrospective");
-        }
-        
         logger.LogInformation("Getting group items for retrospective {RetrospectiveId}", retrospectiveId);
         var items = await groupItemRepository.GetByRetrospectiveId(retrospectiveId);
         return items.Adapt<List<BaseGroupItemDTO>>();
@@ -169,22 +151,13 @@ public class GroupItemService(
         return item.Adapt<BaseGroupItemDTO>();
     }
     
-    private async Task<bool> IsUserInRetrospectiveOrPermissionException(string userId, Guid retrospectiveId)
-    {   
-        if (await retrospectiveRepository.IsUserInRetrospective(retrospectiveId, userId)) return true;
-        logger.LogWarning("User {UserId} is not allowed to access retrospective {RetrospectiveId}", userId, retrospectiveId);
-        throw new PermissionException("You are not allowed to create or update group items in this retrospective");
-    }
-    
     public async Task<ActionItem> ConvertGroupItemToActionItemAsync(
-        string userId,
         int groupItemId,
         ConvertGroupItemToActionItemDto dto,
         CancellationToken cancellationToken = default)
     {
         var groupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
         var group = await groupRepository.GetByIdOr404Async(groupItem.GroupId);
-        await IsUserInRetrospectiveOrPermissionException(userId, group.RetrospectiveId);
 
         var actionItem = new ActionItem
         {

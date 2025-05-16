@@ -1,7 +1,7 @@
 ﻿using IKM_Retro.Controllers.Base;
 using IKM_Retro.DTOs.Auth;
-using IKM_Retro.DTOs.Retrospective.ActionItem;
 using IKM_Retro.DTOs.Retrospective.Group.Items;
+using IKM_Retro.Models.Retro;
 using IKM_Retro.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +26,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Update(int id, [FromBody] PatchGroupItemRequest groupItem, CancellationToken cancellationToken)
     {
-        BaseGroupItemDTO result = await service.PatchGroupItemAsync(UserId, id, groupItem, cancellationToken);
+        BaseGroupItemDTO result = await service.PatchGroupItemAsync(id, groupItem, cancellationToken);
         return Ok(result);
     }
 
@@ -35,7 +35,6 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
     public async Task<IActionResult> Move(int id, [FromBody] MoveGroupItemRequest request , CancellationToken cancellationToken)
     {
         BaseGroupItemDTO result = await service.MoveGroupItemAsync(
-            UserId,
             id,
             request.OrderPosition,
             request.NewGroupId,
@@ -43,23 +42,23 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
         return Ok(result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteGroupItemAsync(UserId, id, cancellationToken);
+        await service.DeleteGroupItemAsync(id, cancellationToken);
         return NoContent();
     }
 
-    [HttpGet("retrospective/{retrospectiveId}")]
+    [HttpGet("retrospective/{retrospectiveId:guid}")]
     [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetByRetrospective(Guid retrospectiveId)
     {
-        var items = await service.GetGroupItemsByRetrospectiveIdAsync(UserId, retrospectiveId);
+        var items = await service.GetGroupItemsByRetrospectiveIdAsync(retrospectiveId);
         return Ok(items);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -75,7 +74,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
         [FromBody] ConvertGroupItemToActionItemDto dto,
         CancellationToken cancellationToken)
     {
-        var actionItem = await service.ConvertGroupItemToActionItemAsync(UserId, id, dto, cancellationToken);
+        ActionItem actionItem = await service.ConvertGroupItemToActionItemAsync(id, dto, cancellationToken);
         return CreatedAtAction(nameof(ActionItemController.Get), "ActionItem", new { id = actionItem.ActionId }, actionItem);
     }
 

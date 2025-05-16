@@ -4,13 +4,11 @@ using IKM_Retro.Models.Base;
 
 namespace IKM_Retro.Models.Retro;
 
-[Table("Comments")]
-public class Comment : Auditable<int>
+[Table("GroupItemComments")]
+public class GroupItemComment : Auditable<int>
 {
     [ForeignKey("GroupItem")]
     public int GroupItemId { get; set; }
-
-    public GroupItem GroupItem { get; set; } = null!;
 
     [ForeignKey("User"), MaxLength(128)]
     public string? UserId { get; set; } 
@@ -22,6 +20,6 @@ public class Comment : Auditable<int>
 
     public bool IsAnonymous { get; set; }
     
-    
+    public GroupItem GroupItem { get; set; } = null!;
     public User? User { get; set; }
 }
