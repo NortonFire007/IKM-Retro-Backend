@@ -15,6 +15,14 @@ public class RetrospectiveService(
     RetrospectiveGroupRepository retrospectiveGroupRepository,
     InviteRepository inviteRepository)
 {
+    
+    public async Task<RetrospectiveToUserDto> GetById(Guid id)
+    {
+        RetrospectiveToUserDto retrospectiveDto = await retrospectiveRepository.GetByIdDto(id) ??
+                                                   throw new NotFoundException("Retrospective not found");
+        return retrospectiveDto;
+    }
+    
     public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
     {
         _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");

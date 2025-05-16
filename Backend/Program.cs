@@ -109,7 +109,7 @@ services.AddScoped<RetrospectiveGroupRepository>();
 services.AddScoped<InviteRepository>();
 services.AddScoped<GroupItemRepository>();
 services.AddScoped<GroupItemVoteRepository>();
-services.AddScoped<CommentRepository>();
+services.AddScoped<GroupItemCommentRepository>();
 services.AddScoped<ActionItemRepository>();
 
 services.AddScoped<RetrospectiveService>();
@@ -117,7 +117,7 @@ services.AddScoped<AccountService>();
 services.AddScoped<InviteService>();
 services.AddScoped<GroupItemService>();
 services.AddScoped<GroupItemVoteService>();
-services.AddScoped<CommentService>();
+services.AddScoped<GroupItemCommentService>();
 services.AddScoped<ActionItemService>();
 services.AddScoped<RoleService>();
 

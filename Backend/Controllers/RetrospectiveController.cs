@@ -18,6 +18,11 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
     {
         return await retrospectiveService.GetByUserId(UserId);
     }
+    [HttpGet("{id:guid}")]
+    public async Task<RetrospectiveToUserDto> GetById(Guid id)
+    {
+        return await retrospectiveService.GetById(id);
+    }
     
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] PostRetrospectiveBody body)

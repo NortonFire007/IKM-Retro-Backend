@@ -16,6 +16,15 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
     {
         return await _ctx.Retrospectives.FindAsync(id);
     }
+    
+    public async Task<RetrospectiveToUserDto?> GetByIdDto(Guid id)
+    {
+        return await _ctx.RetrospectiveToUser
+            .Where(rtu => rtu.RetrospectiveId == id)
+            .ProjectToType<RetrospectiveToUserDto>()
+            .FirstOrDefaultAsync();
+    }
+    
     public async Task<Retrospective> GetByIdOr404Async(int retrospectiveId)
     {
         Retrospective? retrospective = await _ctx.Retrospectives.FindAsync(retrospectiveId);
@@ -32,10 +41,6 @@ public class RetrospectiveRepository(RetroDbContext ctx) : BaseRepository(ctx)
             .Where(rtu => rtu.UserId == userId)
             .ProjectToType<RetrospectiveToUserDto>()
             .ToListAsync();
-        // return await _ctx.RetrospectiveToUser
-        //         .Where(rtu => rtu.UserId == userId)
-        //         .Select(rtu => rtu.Retrospective)
-        //         .ToListAsync();
     }
         
     public async Task<int> CountUserRetrospectives(string userId)

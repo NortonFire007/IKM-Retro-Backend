@@ -13,9 +13,10 @@ public class RetroDbContext(DbContextOptions<RetroDbContext> options) : Identity
     public DbSet<Group> Groups { get; set; }
     public DbSet<GroupItem> GroupItems { get; set; }
     public DbSet<GroupItemVote> GroupItemVotes { get; set; }
-    public DbSet<Comment> Comments { get; set; }
+    public DbSet<GroupItemComment> GroupItemComments { get; set; }
     public DbSet<RetrospectiveInvite> RetrospectiveInvites { get; set; }
     public DbSet<ActionItem> ActionItems { get; set; }
+    public DbSet<ActionItemComment> ActionItemComments { get; set; }
     public object RetrospectiveToUsers { get; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

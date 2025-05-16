@@ -3,37 +3,26 @@ using IKM_Retro.Services;
 
 namespace IKM_Retro.Authorization;
 
-public class RetrospectiveRoleHandler : AuthorizationHandler<RetrospectiveRoleRequirement>
+public class RetrospectiveRoleHandler(RoleService roleService, IHttpContextAccessor httpContextAccessor)
+    : AuthorizationHandler<RetrospectiveRoleRequirement>
 {
-    private readonly RoleService _roleService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public RetrospectiveRoleHandler(RoleService roleService, IHttpContextAccessor httpContextAccessor)
-    {
-        _roleService = roleService;
-        _httpContextAccessor = httpContextAccessor;
-    }
-
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context,
         RetrospectiveRoleRequirement requirement)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext == null)
-            return;
+        HttpContext? httpContext = httpContextAccessor.HttpContext;
+        if (httpContext == null) return;
 
         var userId = httpContext.User.FindFirst("userId")?.Value;
+        if (string.IsNullOrEmpty(userId)) return;
 
-        var retrospectiveIdObj = httpContext.GetRouteValue("id");
-        if (retrospectiveIdObj == null) return;
+        var routeValue = httpContext.GetRouteValue("id")?.ToString();
+        if (!Guid.TryParse(routeValue, out Guid retrospectiveId)) return;
 
-        if (!Guid.TryParse(retrospectiveIdObj.ToString(), out var retrospectiveId))
-            return;
-
-        var role = await _roleService.GetUserRoleAsync(userId, retrospectiveId);
-
-        if (role != null && requirement.AllowedRoles.Contains(role.Value))
+        var role = await roleService.GetUserRoleAsync(userId, retrospectiveId);
+        if (role is not null && requirement.AllowedRoles.Contains(role.Value))
         {
             context.Succeed(requirement);
         }
     }
+
 }
