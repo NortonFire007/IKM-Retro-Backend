@@ -12,6 +12,7 @@ namespace IKM_Retro.Services;
 public class GroupItemService(
     GroupItemRepository groupItemRepository,
     RetrospectiveGroupRepository groupRepository,
+    RoleService roleService,
     ILogger<GroupItemService> logger,
     ActionItemRepository actionItemRepository,
     IHubContext<GroupItemHub> hubContext)
@@ -124,11 +125,18 @@ public class GroupItemService(
     
     public async Task DeleteGroupItemAsync(
         int groupItemId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
         GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
-        
         Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
+        
+        var userRole = await roleService.GetUserRoleAsync(userId, group.RetrospectiveId);
+        if (userRole == null)
+            throw new PermissionException("User does not have access to this retrospective");
+        
+        if (userRole != RoleTypeEnum.Owner && existingGroupItem.UserId != userId)
+            throw new PermissionException("Participants can only delete their own group items");
         
         logger.LogInformation("Deleting group item with Id {GroupItemId}", groupItemId);
         groupItemRepository.DeleteAsync(existingGroupItem);

@@ -15,7 +15,7 @@ public class RetrospectiveRoleHandler(RoleService roleService, IHttpContextAcces
         var userId = httpContext.User.FindFirst("userId")?.Value;
         if (string.IsNullOrEmpty(userId)) return;
 
-        var routeValue = httpContext.GetRouteValue("id")?.ToString();
+        var routeValue = httpContext.GetRouteValue("retrospectiveId")?.ToString();
         if (!Guid.TryParse(routeValue, out Guid retrospectiveId)) return;
 
         var role = await roleService.GetUserRoleAsync(userId, retrospectiveId);

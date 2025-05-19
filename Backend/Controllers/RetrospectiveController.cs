@@ -18,10 +18,10 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
     {
         return await retrospectiveService.GetByUserId(UserId);
     }
-    [HttpGet("{id:guid}")]
-    public async Task<RetrospectiveToUserDto> GetById(Guid id)
+    [HttpGet("{retrospectiveId:guid}")]
+    public async Task<RetrospectiveToUserDto> GetById(Guid retrospectiveId)
     {
-        return await retrospectiveService.GetById(id);
+        return await retrospectiveService.GetById(retrospectiveId);
     }
     
     [HttpPost]
@@ -38,11 +38,11 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
         return Ok();
     }
         
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("{retrospectiveId:guid}")]
     [Authorize(Policy = "OwnerOnly")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid retrospectiveId)
     {
-        await retrospectiveService.Delete(UserId, id);
+        await retrospectiveService.Delete(UserId, retrospectiveId);
         return Ok();
     }
 
