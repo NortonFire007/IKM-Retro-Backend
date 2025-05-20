@@ -11,48 +11,92 @@ namespace IKM_Retro.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/[controller]")]
-public class GroupItemCommentController(GroupItemCommentService service, IOptions<JwtOptions> options) : BaseAuthController(options)
+[Route("api/retrospectives/{retrospectiveId:guid}/items/{groupItemId:int}/comments")]
+public class GroupItemCommentController(GroupItemCommentService service, IOptions<JwtOptions> options)
+    : BaseAuthController(options)
 {
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] PostGroupItemCommentRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(
+        Guid retrospectiveId,
+        int groupItemId,
+        [FromBody] PostGroupItemCommentRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = await service.CreateAsync(UserId!, request, cancellationToken);
+        var result = await service.CreateAsync(UserId!, groupItemId, request, cancellationToken);
         return Ok(result);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] GroupItemComment groupItemComment, CancellationToken cancellationToken)
+    [HttpPut("{commentId:int}")]
+    public async Task<IActionResult> Update(
+        Guid retrospectiveId,
+        int groupItemId,
+        int commentId,
+        [FromBody] PostGroupItemCommentRequest groupItemComment,
+        CancellationToken cancellationToken)
     {
-        if (id != groupItemComment.Id)
+        var groupItemCommentModel = new GroupItemComment
         {
-            return BadRequest("Mismatched Comment ID");
-        }
+            Id = commentId,
+            GroupItemId = groupItemId,
+            Content = groupItemComment.Content,
+            IsAnonymous = groupItemComment.IsAnonymous,
+            UserId = UserId!
+        };
 
-        var result = await service.UpdateAsync(groupItemComment, cancellationToken);
+        var result = await service.UpdateAsync(UserId!, retrospectiveId, groupItemCommentModel, cancellationToken);
         return Ok(result);
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    [HttpDelete("{commentId:int}")]
+    public async Task<IActionResult> Delete(
+        Guid retrospectiveId,
+        int groupItemId,
+        int commentId,
+        CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(id, cancellationToken);
+        await service.DeleteAsync(UserId!, retrospectiveId, commentId, cancellationToken);
         return NoContent();
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    // [HttpPut("{commentId:int}")]
+    // public async Task<IActionResult> Update(
+    //     Guid retrospectiveId,
+    //     int groupItemId,
+    //     int commentId,
+    //     [FromBody] GroupItemComment groupItemComment,
+    //     CancellationToken cancellationToken)
+    // {
+    //     if (commentId != groupItemComment.Id)
+    //     {
+    //         return BadRequest("Mismatched Comment ID");
+    //     }
+    //
+    //     var result = await service.UpdateAsync(groupItemComment, cancellationToken);
+    //     return Ok(result);
+    // }
+
+    // [HttpDelete("{commentId:int}")]
+    // public async Task<IActionResult> Delete(Guid retrospectiveId, int groupItemId, int commentId,
+    //     CancellationToken cancellationToken)
+    // {
+    //     await service.DeleteAsync(commentId, cancellationToken);
+    //     return NoContent();
+    // }
+
+    [HttpGet("{commentId:int}")]
+    public async Task<IActionResult> GetById(Guid retrospectiveId, int groupItemId, int commentId)
     {
-        var comment = await service.GetByIdAsync(id);
+        var comment = await service.GetByIdAsync(commentId);
         if (comment == null)
         {
             return NotFound();
         }
+
         return Ok(comment);
     }
 
-    [HttpGet("group-item/{groupItemId:int}")]
-    public async Task<IActionResult> GetByGroupItem(int groupItemId)
+    [HttpGet]
+    public async Task<IActionResult> GetByGroupItem(Guid retrospectiveId, int groupItemId)
     {
         var comments = await service.GetByGroupItemIdAsync(groupItemId);
         return Ok(comments);

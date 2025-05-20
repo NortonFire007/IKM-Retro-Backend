@@ -2,7 +2,7 @@
 
 public class PostGroupItemCommentRequest
 {
-    public int GroupItemId { get; set; }
+    // public int GroupItemId { get; set; }
     public string Content { get; set; } = null!;
     public bool IsAnonymous { get; set; }
 }

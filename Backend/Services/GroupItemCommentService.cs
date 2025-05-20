@@ -6,15 +6,23 @@ using Mapster;
 
 namespace IKM_Retro.Services;
 
-public class GroupItemCommentService(GroupItemCommentRepository repository, ILogger<GroupItemCommentService> logger)
+public class GroupItemCommentService(
+    GroupItemCommentRepository repository,
+    ILogger<GroupItemCommentService> logger,
+    RetrospectiveAccessService accessService
+)
 {
-    public async Task<BaseGroupItemCommentDto> CreateAsync(string userId, PostGroupItemCommentRequest request, CancellationToken cancellationToken = default)
+    public async Task<BaseGroupItemCommentDto> CreateAsync(
+        string userId,
+        int groupItemId,
+        PostGroupItemCommentRequest request,
+        CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Creating new group item comment for GroupItem {GroupItemId}", request.GroupItemId);
+        logger.LogInformation("Creating new group item comment for GroupItem {GroupItemId}", groupItemId);
 
         GroupItemComment newGroupItemComment = new()
         {
-            GroupItemId = request.GroupItemId,
+            GroupItemId = groupItemId,
             Content = request.Content,
             IsAnonymous = request.IsAnonymous,
             UserId = userId,
@@ -27,30 +35,77 @@ public class GroupItemCommentService(GroupItemCommentRepository repository, ILog
         return newGroupItemComment.Adapt<BaseGroupItemCommentDto>();
     }
 
-    public async Task<BaseGroupItemCommentDto> UpdateAsync(GroupItemComment groupItemComment, CancellationToken cancellationToken = default)
+    public async Task<PostGroupItemCommentRequest> UpdateAsync(
+        string userId,
+        Guid retrospectiveId,
+        GroupItemComment groupItemComment,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Updating group item comment with Id {CommentId}", groupItemComment.Id);
 
-        repository.Update(groupItemComment);
+        var original = await repository.GetByIdAsync(groupItemComment.Id);
+        if (original == null)
+            throw new NotFoundException("Comment not found");
+
+        bool isOwner = await accessService.IsOwnerAsync(userId, retrospectiveId);
+        if (original.UserId != userId && !isOwner)
+            throw new PermissionException("You cannot update someone else's comment");
+
+        original.Content = groupItemComment.Content;
+        original.IsAnonymous = groupItemComment.IsAnonymous;
+
+        repository.Update(original);
         await repository.SaveChangesAsyncWithCancellation(cancellationToken);
 
-        return groupItemComment.Adapt<BaseGroupItemCommentDto>();
+        return original.Adapt<PostGroupItemCommentRequest>();
     }
 
-    public async Task DeleteAsync(int commentId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(
+        string userId,
+        Guid retrospectiveId,
+        int commentId,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Deleting group item comment with Id {CommentId}", commentId);
 
         GroupItemComment? comment = await repository.GetByIdAsync(commentId);
         if (comment == null)
-        {
-            logger.LogWarning("Group item comment with Id {CommentId} not found.", commentId);
             throw new NotFoundException("Comment not found");
-        }
+
+        bool isOwner = await accessService.IsOwnerAsync(userId, retrospectiveId);
+        if (comment.UserId != userId && !isOwner)
+            throw new PermissionException("You cannot delete someone else's comment");
 
         repository.Delete(comment);
         await repository.SaveChangesAsyncWithCancellation(cancellationToken);
     }
+
+
+    // public async Task<BaseGroupItemCommentDto> UpdateAsync(GroupItemComment groupItemComment,
+    //     CancellationToken cancellationToken = default)
+    // {
+    //     logger.LogInformation("Updating group item comment with Id {CommentId}", groupItemComment.Id);
+    //
+    //     repository.Update(groupItemComment);
+    //     await repository.SaveChangesAsyncWithCancellation(cancellationToken);
+    //
+    //     return groupItemComment.Adapt<BaseGroupItemCommentDto>();
+    // }
+
+    // public async Task DeleteAsync(int commentId, CancellationToken cancellationToken = default)
+    // {
+    //     logger.LogInformation("Deleting group item comment with Id {CommentId}", commentId);
+    //
+    //     GroupItemComment? comment = await repository.GetByIdAsync(commentId);
+    //     if (comment == null)
+    //     {
+    //         logger.LogWarning("Group item comment with Id {CommentId} not found.", commentId);
+    //         throw new NotFoundException("Comment not found");
+    //     }
+    //
+    //     repository.Delete(comment);
+    //     await repository.SaveChangesAsyncWithCancellation(cancellationToken);
+    // }
 
     public async Task<BaseGroupItemCommentDto?> GetByIdAsync(int commentId)
     {
