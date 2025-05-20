@@ -32,7 +32,7 @@ public class GroupItemController(GroupItemService service, IOptions<JwtOptions> 
         [FromBody] PatchGroupItemRequest groupItem,
         CancellationToken cancellationToken)
     {
-        BaseGroupItemDTO result = await service.PatchGroupItemAsync(itemId, groupItem, cancellationToken);
+        BaseGroupItemDTO result = await service.PatchGroupItemAsync(itemId, groupItem, UserId, cancellationToken);
         return Ok(result);
     }
 

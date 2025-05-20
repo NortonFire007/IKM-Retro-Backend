@@ -51,11 +51,16 @@ public class GroupItemService(
     public async Task<BaseGroupItemDTO> PatchGroupItemAsync(
         int groupItemId,
         PatchGroupItemRequest groupItem,
+        string userId,
         CancellationToken cancellationToken = default)
     {
         GroupItem existingGroupItem = await groupItemRepository.GetByIdOr404Async(groupItemId);
-
         Group group = await groupRepository.GetByIdOr404Async(existingGroupItem.GroupId);
+        
+        var userRole = await roleService.GetUserRoleAsync(userId, group.RetrospectiveId);
+
+        if (userRole != RoleTypeEnum.Owner && existingGroupItem.UserId != userId)
+            throw new PermissionException("Participants can only edit their own group items");
         
         if (!string.IsNullOrEmpty(groupItem.Content))
             existingGroupItem.Content = groupItem.Content;
