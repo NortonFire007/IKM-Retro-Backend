@@ -18,7 +18,8 @@ public class GroupItemVoteService(
         var queryResult = await (
             from gi in groupItemRepository.GetAllQuery()
             join rg in retrospectiveGroupRepository.GetAllQuery() on gi.GroupId equals rg.Id
-            join ru in retrospectiveRepository.GetRetrospectiveUsersQuery() on rg.RetrospectiveId equals ru.RetrospectiveId
+            join ru in retrospectiveRepository.GetRetrospectiveUsersQuery() on rg.RetrospectiveId equals ru
+                .RetrospectiveId
             where gi.Id == groupItemId && ru.UserId == userId
             select new
             {
@@ -33,7 +34,8 @@ public class GroupItemVoteService(
         var voteInfo = await (
             from v in groupItemVoteRepository.GetAllQuery()
             where v.UserId == userId
-            group v by 1 into g
+            group v by 1
+            into g
             select new
             {
                 ExistingVote = g.FirstOrDefault(v => v.GroupItemId == groupItemId),
@@ -63,7 +65,6 @@ public class GroupItemVoteService(
 
         await groupItemVoteRepository.SaveChangesAsync();
         return vote.Adapt<GroupItemVoteDTO>();
-        
     }
 
     public async Task RemoveVote(string userId, int groupItemId)
@@ -72,16 +73,25 @@ public class GroupItemVoteService(
             from v in groupItemVoteRepository.GetAllQuery()
             join gi in groupItemRepository.GetAllQuery() on v.GroupItemId equals gi.Id
             join rg in retrospectiveGroupRepository.GetAllQuery() on gi.GroupId equals rg.Id
-            join ru in retrospectiveRepository.GetRetrospectiveUsersQuery() on rg.RetrospectiveId equals ru.RetrospectiveId
+            join ru in retrospectiveRepository.GetRetrospectiveUsersQuery() on rg.RetrospectiveId equals ru
+                .RetrospectiveId
             where v.UserId == userId && v.GroupItemId == groupItemId && ru.UserId == userId
             select v).FirstOrDefaultAsync();
 
         if (voteToRemove == null)
             throw new NotFoundException("Group item vote not found or you don't have permission");
-        
 
-        groupItemVoteRepository.Remove(voteToRemove);
+        if (voteToRemove.Count == 1)
+        {
+            groupItemVoteRepository.Remove(voteToRemove);
+        }
+        else
+        {
+            voteToRemove.Count -= 1;
+        }
+
+        Console.WriteLine($"zalupa voteToRemove {voteToRemove.Count} of {voteToRemove.Id}");
+
         await groupItemVoteRepository.SaveChangesAsync();
     }
-
 }

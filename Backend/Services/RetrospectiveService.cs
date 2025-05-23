@@ -15,14 +15,13 @@ public class RetrospectiveService(
     RetrospectiveGroupRepository retrospectiveGroupRepository,
     InviteRepository inviteRepository)
 {
-    
     public async Task<RetrospectiveToUserDto> GetById(Guid id)
     {
         RetrospectiveToUserDto retrospectiveDto = await retrospectiveRepository.GetByIdDto(id) ??
-                                                   throw new NotFoundException("Retrospective not found");
+                                                  throw new NotFoundException("Retrospective not found");
         return retrospectiveDto;
     }
-    
+
     public async Task<List<RetrospectiveToUserDto>> GetByUserId(string userId)
     {
         _ = await userManager.FindByIdAsync(userId) ?? throw new NotFoundException("User not found.");
@@ -96,6 +95,23 @@ public class RetrospectiveService(
         }
     }
 
+    public async Task Update(string userId, Guid retrospectiveId, UpdateRetrospectiveDto dto)
+    {
+        Retrospective retrospective = await retrospectiveRepository.GetById(retrospectiveId)
+                                      ?? throw new NotFoundException("Retrospective not found.");
+
+        if (retrospective.CreatorUserId != userId)
+            throw new BusinessException("Only the creator can update this retrospective.");
+
+        if (!string.IsNullOrWhiteSpace(dto.Title))
+            retrospective.Title = dto.Title;
+
+        if (dto.IsActive.HasValue)
+            retrospective.IsActive = dto.IsActive.Value;
+
+        await retrospectiveRepository.SaveChangesAsync();
+    }
+
     public async Task Delete(string userId, Guid retrospectiveId)
     {
         Retrospective retrospective = await retrospectiveRepository.GetById(retrospectiveId)
@@ -108,5 +124,20 @@ public class RetrospectiveService(
 
         retrospectiveRepository.Delete(retrospective);
         await retrospectiveRepository.SaveChangesAsync();
+    }
+
+    public async Task<List<Retrospective>> GetUserRetrospectivesAsync(string userId)
+    {
+        return await retrospectiveRepository.GetByUserIdAsync(userId);
+    }
+
+    public async Task<List<RetrospectiveDto>> GetCreatedRetrospectivesAsync(string userId)
+    {
+        return await retrospectiveRepository.GetCreatedByUserAsync(userId);
+    }
+
+    public async Task<List<RetrospectiveDto>> GetJoinedRetrospectivesAsync(string userId)
+    {
+        return await retrospectiveRepository.GetJoinedByUserAsync(userId);
     }
 }

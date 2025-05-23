@@ -16,6 +16,7 @@ public class GroupItemCommentController(GroupItemCommentService service, IOption
     : BaseAuthController(options)
 {
     [HttpPost]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Create(
         Guid retrospectiveId,
         int groupItemId,
@@ -27,6 +28,7 @@ public class GroupItemCommentController(GroupItemCommentService service, IOption
     }
 
     [HttpPut("{commentId:int}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> Update(
         Guid retrospectiveId,
         int groupItemId,
@@ -48,6 +50,7 @@ public class GroupItemCommentController(GroupItemCommentService service, IOption
     }
 
     [HttpDelete("{commentId:int}")]
+    [Authorize(Policy = "Owner")]
     public async Task<IActionResult> Delete(
         Guid retrospectiveId,
         int groupItemId,
@@ -59,6 +62,7 @@ public class GroupItemCommentController(GroupItemCommentService service, IOption
     }
 
     [HttpGet("{commentId:int}")]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetById(Guid retrospectiveId, int groupItemId, int commentId)
     {
         var comment = await service.GetByIdAsync(commentId);
@@ -71,6 +75,7 @@ public class GroupItemCommentController(GroupItemCommentService service, IOption
     }
 
     [HttpGet]
+    [Authorize(Policy = "ParticipantOrOwner")]
     public async Task<IActionResult> GetByGroupItem(Guid retrospectiveId, int groupItemId)
     {
         var comments = await service.GetByGroupItemIdAsync(groupItemId);
