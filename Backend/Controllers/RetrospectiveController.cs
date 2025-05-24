@@ -11,7 +11,10 @@ namespace IKM_Retro.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class RetrospectiveController(RetrospectiveService retrospectiveService, IOptions<JwtOptions> options)
+public class RetrospectiveController(
+    RetrospectiveService retrospectiveService, 
+    RetrospectiveStatisticsService retrospectiveStatisticsService,
+    IOptions<JwtOptions> options)
     : BaseAuthController(options)
 {
     [HttpGet]
@@ -75,5 +78,12 @@ public class RetrospectiveController(RetrospectiveService retrospectiveService, 
     {
         var retros = await retrospectiveService.GetJoinedRetrospectivesAsync(UserId);
         return Ok(retros);
+    }
+    
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
+    {
+        var stats = await retrospectiveStatisticsService.GetStatisticsAsync();
+        return Ok(stats);
     }
 }

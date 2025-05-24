@@ -121,6 +121,7 @@ services.AddScoped<GroupItemCommentService>();
 services.AddScoped<ActionItemService>();
 services.AddScoped<RoleService>();
 services.AddScoped<RetrospectiveAccessService>();
+services.AddScoped<RetrospectiveStatisticsService>();
 
 builder.Services.AddProblemDetails(options =>
 {
